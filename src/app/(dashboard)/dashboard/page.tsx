@@ -33,6 +33,7 @@ import {
   HeartPulse,
   TrendingDown,
   Sparkles,
+  Activity,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -130,27 +131,33 @@ export default function DashboardPage() {
       )}
 
       {/* Header welcome banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-emerald-700 via-teal-800 to-emerald-900 rounded-3xl p-6 text-white shadow-md">
-        <div>
-          <span className="inline-block px-3 py-1 rounded-full bg-emerald-600/70 text-xs font-bold mb-2 tracking-wide uppercase">
-            {t.dashboard.dayCounter.replace("{day}", String(dayNumber))}
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+      <div className="relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-5 bg-gradient-to-r from-emerald-800 via-teal-900 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-white/10 glow-emerald">
+        <div className="space-y-2 z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-xs font-bold tracking-wide uppercase text-emerald-200">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+            </span>
+            <span>{t.dashboard.dayCounter.replace("{day}", String(dayNumber))}</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
             {t.dashboard.welcome}, {profile.fullName}!
           </h1>
-          <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-md">
+
+          <p className="text-emerald-100/90 text-xs sm:text-sm max-w-md leading-relaxed">
             {locale === "te"
               ? "స్థిరమైన ఆహారం మరియు క్రమమైన నడకతో మీ 90 రోజుల ప్రయాణాన్ని కొనసాగించండి."
               : "Stick to your calorie target and daily steps for sustainable results."}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 z-10">
           <Link href="/profile">
             <Button
               variant="secondary"
               size="sm"
-              className="bg-white/10 hover:bg-white/20 text-white border-0 text-xs font-semibold rounded-xl"
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-semibold rounded-xl backdrop-blur-md transition-all active:scale-95"
             >
               {t.nav.profile}
             </Button>
@@ -159,35 +166,38 @@ export default function DashboardPage() {
             <Button
               variant="secondary"
               size="sm"
-              className="bg-white/10 hover:bg-white/20 text-white border-0 text-xs font-semibold rounded-xl"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white border-0 text-xs font-semibold rounded-xl shadow-md transition-all active:scale-95"
             >
               {t.profile.recalculateButton}
             </Button>
           </Link>
         </div>
+
+        {/* Ambient background decoration */}
+        <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
       </div>
 
       {/* 90-Day Weight Goal Progress Card */}
-      <Card className="p-5 border-slate-200 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+      <div className="glass-card card-spotlight rounded-3xl p-6 border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {t.dashboard.progressTitle}
             </span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl font-black text-slate-900 dark:text-white">
+            <div className="flex items-baseline gap-2.5 mt-1">
+              <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
                 {profile.currentWeightKg} <span className="text-sm font-normal text-slate-400">kg</span>
               </span>
               <span className="text-slate-400 font-bold">→</span>
-              <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+              <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
                 {goal.targetWeightKg} <span className="text-sm font-normal text-slate-400">kg</span>
               </span>
             </div>
           </div>
 
           <div className="text-left sm:text-right">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
-              <TrendingDown className="h-3.5 w-3.5" />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-500/20">
+              <TrendingDown className="h-4 w-4" />
               <span>
                 {weightDeltaToLose > 0
                   ? t.dashboard.toLose.replace("{amount}", String(weightDeltaToLose))
@@ -200,73 +210,82 @@ export default function DashboardPage() {
         {/* Progress Bar */}
         <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden dark:bg-slate-800">
           <div
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 h-3 rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-3 rounded-full transition-all duration-700 shadow-xs"
             style={{ width: `${Math.min((dayNumber / 90) * 100, 100)}%` }}
           />
         </div>
-        <div className="flex justify-between text-[11px] text-slate-400 mt-1.5 font-medium">
+        <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium">
           <span>Day {dayNumber} of 90</span>
           <span>Target Date: {goal.targetDate}</span>
         </div>
-      </Card>
+      </div>
 
       {/* Target overview metrics grid */}
       <div>
-        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-3">
-          {t.dashboard.overviewTitle}
+        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <Activity className="h-4 w-4 text-emerald-600" />
+          <span>{t.dashboard.overviewTitle}</span>
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="p-4 border-slate-200">
+          <div className="glass-card card-spotlight rounded-2xl p-4 bg-gradient-to-b from-orange-500/5 to-transparent border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-semibold">{t.dashboard.calories}</span>
-              <Flame className="h-4 w-4 text-orange-500" />
+              <div className="h-7 w-7 rounded-lg bg-orange-500/15 flex items-center justify-center text-orange-600">
+                <Flame className="h-4 w-4" />
+              </div>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-white">
               0 <span className="text-xs font-normal text-slate-400">kcal</span>
             </div>
-            <p className="text-[11px] text-emerald-700 font-medium mt-1">
+            <p className="text-[11px] text-orange-700 dark:text-orange-400 font-semibold mt-1">
               Target: {goal.calorieTargetMin}-{goal.calorieTargetMax}
             </p>
-          </Card>
+          </div>
 
-          <Card className="p-4 border-slate-200">
+          <div className="glass-card card-spotlight rounded-2xl p-4 bg-gradient-to-b from-emerald-500/5 to-transparent border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-semibold">{t.dashboard.protein}</span>
-              <Dumbbell className="h-4 w-4 text-emerald-600" />
+              <div className="h-7 w-7 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-600">
+                <Dumbbell className="h-4 w-4" />
+              </div>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-white">
               0 <span className="text-xs font-normal text-slate-400">g</span>
             </div>
-            <p className="text-[11px] text-emerald-700 font-medium mt-1">
+            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold mt-1">
               Target: {goal.proteinTargetMinG}-{goal.proteinTargetMaxG}g
             </p>
-          </Card>
+          </div>
 
-          <Card className="p-4 border-slate-200">
+          <div className="glass-card card-spotlight rounded-2xl p-4 bg-gradient-to-b from-cyan-500/5 to-transparent border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-semibold">{t.dashboard.water}</span>
-              <Droplets className="h-4 w-4 text-cyan-600" />
+              <div className="h-7 w-7 rounded-lg bg-cyan-500/15 flex items-center justify-center text-cyan-600">
+                <Droplets className="h-4 w-4" />
+              </div>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-white">
               {loggedWaterMl} <span className="text-xs font-normal text-slate-400">ml</span>
             </div>
-            <p className="text-[11px] text-cyan-700 font-medium mt-1">
+            <p className="text-[11px] text-cyan-700 dark:text-cyan-400 font-semibold mt-1">
               Target: {goal.dailyWaterTargetMl} ml
             </p>
-          </Card>
+          </div>
 
-          <Card className="p-4 border-slate-200">
+          <div className="glass-card card-spotlight rounded-2xl p-4 bg-gradient-to-b from-amber-500/5 to-transparent border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-semibold">{t.dashboard.steps}</span>
-              <Footprints className="h-4 w-4 text-amber-600" />
+              <div className="h-7 w-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-600">
+                <Footprints className="h-4 w-4" />
+              </div>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-white">
               0 <span className="text-xs font-normal text-slate-400">steps</span>
             </div>
-            <p className="text-[11px] text-amber-700 font-medium mt-1">
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold mt-1">
               Target: {goal.dailyStepTarget}
             </p>
-          </Card>
+          </div>
         </div>
       </div>
 
@@ -349,43 +368,48 @@ export default function DashboardPage() {
           {t.dashboard.quickActions}
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center h-20 text-center gap-1.5 rounded-2xl"
+          <button
+            type="button"
+            className="glass-card card-spotlight flex flex-col items-center justify-center h-24 text-center gap-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 active:scale-95"
             onClick={() => setQuickLogType("weight")}
           >
-            <Scale className="h-5 w-5 text-emerald-600" />
-            <span className="text-xs font-bold">{t.dashboard.logWeight}</span>
-          </Button>
+            <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <Scale className="h-5 w-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{t.dashboard.logWeight}</span>
+          </button>
 
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center h-20 text-center gap-1.5 rounded-2xl"
+          <button
+            type="button"
+            className="glass-card card-spotlight flex flex-col items-center justify-center h-24 text-center gap-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 hover:bg-teal-50/50 dark:hover:bg-teal-950/20 hover:border-teal-300 dark:hover:border-teal-800 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 active:scale-95"
             onClick={() => setQuickLogType("waist")}
           >
-            <Ruler className="h-5 w-5 text-emerald-600" />
-            <span className="text-xs font-bold">{t.dashboard.logWaist}</span>
-          </Button>
+            <div className="h-9 w-9 rounded-xl bg-teal-500/15 flex items-center justify-center text-teal-600 dark:text-teal-400">
+              <Ruler className="h-5 w-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{t.dashboard.logWaist}</span>
+          </button>
 
-          <Button
-            variant="outline"
-            className="flex flex-col items-center justify-center h-20 text-center gap-1.5 rounded-2xl"
+          <button
+            type="button"
+            className="glass-card card-spotlight flex flex-col items-center justify-center h-24 text-center gap-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 hover:border-cyan-300 dark:hover:border-cyan-800 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 active:scale-95"
             onClick={handleAddWater}
           >
-            <Droplets className="h-5 w-5 text-cyan-600" />
-            <span className="text-xs font-bold">{t.dashboard.logWater}</span>
-          </Button>
+            <div className="h-9 w-9 rounded-xl bg-cyan-500/15 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+              <Droplets className="h-5 w-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{t.dashboard.logWater}</span>
+          </button>
 
           <Link href="/onboarding" className="w-full">
-            <Button
-              variant="outline"
-              className="flex flex-col items-center justify-center h-20 text-center gap-1.5 rounded-2xl w-full"
-            >
-              <Sparkles className="h-5 w-5 text-amber-600" />
-              <span className="text-xs font-bold">
+            <div className="glass-card card-spotlight flex flex-col items-center justify-center h-24 text-center gap-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 hover:border-amber-300 dark:hover:border-amber-800 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 active:scale-95 w-full">
+              <div className="h-9 w-9 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 {locale === "te" ? "లక్ష్యాలు సవరించండి" : "Edit Goals"}
               </span>
-            </Button>
+            </div>
           </Link>
         </div>
       </div>

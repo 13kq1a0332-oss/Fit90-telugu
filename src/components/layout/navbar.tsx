@@ -22,32 +22,32 @@ export function Navbar({ userEmail }: NavbarProps) {
     pathname?.startsWith("/reset-password");
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-slate-800 dark:bg-slate-900/90">
+    <header className="sticky top-0 z-40 w-full glass-navbar shadow-xs">
       <div className="max-w-4xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
         <Link
           href={userEmail ? "/dashboard" : "/"}
           className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white group"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-700/20 group-hover:bg-emerald-700 transition-colors">
-            <Activity className="h-6 w-6" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-all duration-200">
+            <Activity className="h-5 w-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg leading-tight font-black tracking-tight text-emerald-800 dark:text-emerald-400">
-              Fit90 <span className="text-slate-900 dark:text-white font-medium">తెలుగు</span>
+            <span className="text-lg leading-tight font-black tracking-tight text-slate-900 dark:text-white">
+              Fit90 <span className="text-gradient-emerald">తెలుగు</span>
             </span>
-            <span className="text-[10px] text-slate-500 font-normal">
-              {locale === "te" ? "90 రోజుల ప్రయాణం" : "90-Day Journey"}
+            <span className="text-[10px] text-slate-500 font-medium">
+              {locale === "te" ? "90 రోజుల జీవన ప్రయాణం" : "90-Day Metabolic Health"}
             </span>
           </div>
         </Link>
 
         {userEmail && (
-          <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+          <nav className="hidden md:flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-sm font-medium">
             <Link
               href="/dashboard"
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-xl transition-all ${
                 pathname === "/dashboard"
-                  ? "bg-slate-100 font-bold text-slate-900 dark:bg-slate-800 dark:text-white"
+                  ? "bg-white dark:bg-slate-900 font-bold text-emerald-700 dark:text-emerald-400 shadow-xs"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
@@ -55,9 +55,9 @@ export function Navbar({ userEmail }: NavbarProps) {
             </Link>
             <Link
               href="/diet"
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-xl transition-all ${
                 pathname?.startsWith("/diet")
-                  ? "bg-slate-100 font-bold text-slate-900 dark:bg-slate-800 dark:text-white"
+                  ? "bg-white dark:bg-slate-900 font-bold text-emerald-700 dark:text-emerald-400 shadow-xs"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
@@ -65,9 +65,9 @@ export function Navbar({ userEmail }: NavbarProps) {
             </Link>
             <Link
               href="/workouts"
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-xl transition-all ${
                 pathname?.startsWith("/workouts")
-                  ? "bg-slate-100 font-bold text-slate-900 dark:bg-slate-800 dark:text-white"
+                  ? "bg-white dark:bg-slate-900 font-bold text-emerald-700 dark:text-emerald-400 shadow-xs"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
@@ -75,9 +75,9 @@ export function Navbar({ userEmail }: NavbarProps) {
             </Link>
             <Link
               href="/health"
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-xl transition-all ${
                 pathname?.startsWith("/health")
-                  ? "bg-slate-100 font-bold text-slate-900 dark:bg-slate-800 dark:text-white"
+                  ? "bg-white dark:bg-slate-900 font-bold text-emerald-700 dark:text-emerald-400 shadow-xs"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
@@ -85,9 +85,9 @@ export function Navbar({ userEmail }: NavbarProps) {
             </Link>
             <Link
               href="/insights"
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 rounded-xl transition-all ${
                 pathname?.startsWith("/insights")
-                  ? "bg-slate-100 font-bold text-slate-900 dark:bg-slate-800 dark:text-white"
+                  ? "bg-white dark:bg-slate-900 font-bold text-emerald-700 dark:text-emerald-400 shadow-xs"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
