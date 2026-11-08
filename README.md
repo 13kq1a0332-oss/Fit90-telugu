@@ -195,3 +195,4 @@ Fit90 Telugu is configured for direct zero-config Vercel deployment:
 
 ## 📄 License
 MIT License. Built with ❤️ for healthy, sustainable Indian lifestyle management.
+
