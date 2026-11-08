@@ -38,7 +38,7 @@ export default function RootLayout({
 
   return (
     <html lang={savedLocale} suppressHydrationWarning>
-      <body className="min-h-screen bg-white font-sans antialiased text-slate-900 selection:bg-emerald-100 selection:text-emerald-900">
+      <body className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans antialiased text-slate-900 dark:text-slate-100 selection:bg-emerald-500/20 selection:text-emerald-900 dark:selection:text-emerald-100">
         <I18nProvider initialLocale={savedLocale}>
           {children}
           <PwaRegister />

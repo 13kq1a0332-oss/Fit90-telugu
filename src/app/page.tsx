@@ -27,7 +27,7 @@ export default function HomePage() {
   const [heroTab, setHeroTab] = useState<"diet" | "workout" | "vitals" | "ai">("diet");
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-x-hidden selection:bg-emerald-500/20">
+    <div className="min-h-screen flex flex-col bg-ambient-mesh dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-x-hidden selection:bg-emerald-500/20">
       <SafetyBanner />
       <Navbar />
 

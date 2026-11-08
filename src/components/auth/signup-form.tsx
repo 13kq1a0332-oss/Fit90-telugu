@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, UserPlus } from "lucide-react";
 
 export function SignupForm() {
   const router = useRouter();
@@ -103,12 +103,21 @@ export function SignupForm() {
   };
 
   return (
-    <Card className="w-full max-w-md shadow-lg border-slate-200/90 dark:border-slate-800">
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          {t.auth.signupTitle}
+    <Card className="w-full max-w-md glass-card rounded-3xl p-2 sm:p-3 shadow-2xl border border-slate-200/80 dark:border-slate-800/90 relative overflow-hidden">
+      {/* Ambient background decoration inside card */}
+      <div className="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+
+      <CardHeader className="space-y-1 text-center relative z-10">
+        <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 mb-2">
+          <UserPlus className="h-6 w-6" />
+        </div>
+        <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400">
+            {t.auth.signupTitle}
+          </span>
         </CardTitle>
-        <CardDescription className="text-slate-600 dark:text-slate-400">
+        <CardDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
           {t.auth.signupSubtitle}
         </CardDescription>
       </CardHeader>
