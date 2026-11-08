@@ -1,0 +1,108 @@
+"use client";
+
+import React, { useState } from "react";
+import { useI18n } from "@/lib/i18n/context";
+import { BiometricsOverview } from "@/components/health/biometrics-overview";
+import { WeightWaistCharts } from "@/components/health/weight-waist-charts";
+import { LabRecordsView } from "@/components/health/lab-records-view";
+import { RemindersManager } from "@/components/health/reminders-manager";
+import {
+  HeartPulse,
+  Activity,
+  LineChart,
+  FileText,
+  Bell,
+  ShieldCheck,
+} from "lucide-react";
+
+type HealthTab = "overview" | "trends" | "labs" | "reminders";
+
+export default function HealthPage() {
+  const { locale, t } = useI18n();
+  const [activeTab, setActiveTab] = useState<HealthTab>("overview");
+
+  const tabs: {
+    id: HealthTab;
+    label: string;
+    icon: any;
+  }[] = [
+    {
+      id: "overview",
+      label: t.health.tabOverview,
+      icon: Activity,
+    },
+    {
+      id: "trends",
+      label: t.health.tabTrends,
+      icon: LineChart,
+    },
+    {
+      id: "labs",
+      label: t.health.tabLabs,
+      icon: FileText,
+    },
+    {
+      id: "reminders",
+      label: t.health.tabReminders,
+      icon: Bell,
+    },
+  ];
+
+  return (
+    <div className="space-y-6 pb-20 md:pb-12 max-w-5xl mx-auto px-2 sm:px-4">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+              <HeartPulse className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              {t.health.title}
+            </h1>
+          </div>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-2xl">
+            {t.health.subtitle}
+          </p>
+        </div>
+
+        {/* Safety & Non-Diagnostic Badge */}
+        <div className="flex items-center gap-1.5 self-start sm:self-center text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+          <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <span>{locale === "te" ? "వ్యక్తిగత ట్రాకింగ్ రక్షణ" : "Private Health Tracking"}</span>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex overflow-x-auto no-scrollbar gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              id={`health-tab-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex-1 justify-center ${
+                isActive
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50"
+              }`}
+            >
+              <Icon className={`h-4 w-4 ${isActive ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Content Panes */}
+      <div className="mt-4">
+        {activeTab === "overview" && <BiometricsOverview />}
+        {activeTab === "trends" && <WeightWaistCharts />}
+        {activeTab === "labs" && <LabRecordsView />}
+        {activeTab === "reminders" && <RemindersManager />}
+      </div>
+    </div>
+  );
+}
