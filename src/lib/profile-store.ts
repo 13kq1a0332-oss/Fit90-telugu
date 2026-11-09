@@ -70,23 +70,7 @@ export async function getUserProfileAndGoal(): Promise<{
   profile: UserProfileData;
   goal: UserGoalData;
 }> {
-  // Check if live Supabase is configured
-  if (typeof window !== "undefined") {
-    try {
-      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-      const savedGoal = localStorage.getItem(GOALS_STORAGE_KEY);
-
-      if (savedProfile && savedGoal) {
-        return {
-          profile: JSON.parse(savedProfile),
-          goal: JSON.parse(savedGoal),
-        };
-      }
-    } catch {
-      // ignore
-    }
-  }
-
+  // 1. Primary: Fetch for currently authenticated Supabase user
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient();
@@ -99,7 +83,7 @@ export async function getUserProfileAndGoal(): Promise<{
           .from("profiles")
           .select("*")
           .eq("id", user.id)
-          .single()) as { data: Database["public"]["Tables"]["profiles"]["Row"] | null };
+          .maybeSingle()) as { data: Database["public"]["Tables"]["profiles"]["Row"] | null };
 
         const { data: goalRow } = (await supabase
           .from("goals")
@@ -113,14 +97,14 @@ export async function getUserProfileAndGoal(): Promise<{
         if (profileRow) {
           const profile: UserProfileData = {
             id: profileRow.id,
-            email: profileRow.email,
-            fullName: profileRow.full_name,
+            email: profileRow.email || user.email || "",
+            fullName: profileRow.full_name || user.user_metadata?.full_name || "Member",
             preferredLocale: profileRow.preferred_locale || "te",
             gender: (profileRow.gender as Gender) || "male",
             age: 31,
             heightCm: Number(profileRow.height_cm) || 176,
-            currentWeightKg: Number(profileRow.current_weight_kg) || 118,
-            waistCm: Number(profileRow.waist_cm) || 150,
+            currentWeightKg: Number(profileRow.current_weight_kg) || 85,
+            waistCm: Number(profileRow.waist_cm) || 95,
             activityLevel: (profileRow.activity_level as ActivityLevel) || "sedentary",
             dietaryPreference: (profileRow.dietary_preference as any) || "mixed",
             snoringReported: profileRow.health_notes?.includes("snoring") || false,
@@ -146,10 +130,53 @@ export async function getUserProfileAndGoal(): Promise<{
             : DEFAULT_GOAL_DATA;
 
           return { profile, goal };
+        } else {
+          // Dynamic profile from authenticated user metadata (prevents showing another user's name)
+          const metaName = user.user_metadata?.full_name || (user.email ? user.email.split("@")[0] : "Member");
+          const initialProfile: UserProfileData = {
+            ...DEFAULT_NEW_USER_PROFILE,
+            id: user.id,
+            email: user.email || "",
+            fullName: metaName,
+            preferredLocale: (user.user_metadata?.preferred_locale as any) || "te",
+            isOnboarded: false,
+          };
+          return { profile: initialProfile, goal: DEFAULT_GOAL_DATA };
         }
       }
     } catch (e) {
-      console.warn("Supabase profile fetch error, using local fallback", e);
+      console.warn("Supabase profile fetch error:", e);
+    }
+  }
+
+  // 2. Secondary: Check mobile OTP logged-in session
+  if (typeof window !== "undefined") {
+    try {
+      const mobileUserStr = localStorage.getItem("fit90_current_user");
+      if (mobileUserStr) {
+        const mobileUser = JSON.parse(mobileUserStr);
+        return {
+          profile: {
+            ...DEFAULT_NEW_USER_PROFILE,
+            id: mobileUser.id,
+            email: mobileUser.email || mobileUser.phone || "",
+            fullName: mobileUser.fullName || "Member",
+            isOnboarded: true,
+          },
+          goal: DEFAULT_GOAL_DATA,
+        };
+      }
+
+      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+      const savedGoal = localStorage.getItem(GOALS_STORAGE_KEY);
+      if (savedProfile && savedGoal) {
+        return {
+          profile: JSON.parse(savedProfile),
+          goal: JSON.parse(savedGoal),
+        };
+      }
+    } catch {
+      // ignore
     }
   }
 

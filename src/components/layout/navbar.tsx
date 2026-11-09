@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LanguageToggle } from "./language-toggle";
 import { useI18n } from "@/lib/i18n/context";
+import { createClient } from "@/lib/supabase/client";
 import { Activity, User, LogOut } from "lucide-react";
 
 interface NavbarProps {
@@ -14,6 +15,25 @@ interface NavbarProps {
 export function Navbar({ userEmail }: NavbarProps) {
   const { t, locale } = useI18n();
   const pathname = usePathname();
+
+  const handleClientLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("fit90_user_profile");
+        localStorage.removeItem("fit90_user_goals");
+        localStorage.removeItem("fit90_current_user");
+        localStorage.removeItem("fit90_active_meal_plan");
+        localStorage.removeItem("fit90_food_logs");
+        document.cookie = "fit90_client_demo=; max-age=0; path=/;";
+      } catch {}
+    }
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {}
+    window.location.href = "/login";
+  };
 
   const isAuthPage =
     pathname?.startsWith("/login") ||
@@ -117,16 +137,15 @@ export function Navbar({ userEmail }: NavbarProps) {
               >
                 <User className="h-5 w-5" />
               </Link>
-              <form action="/auth/signout" method="post">
-                <button
-                  type="submit"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-red-950/40"
-                  aria-label={t.nav.logout}
-                  title={t.nav.logout}
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={handleClientLogout}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-red-950/40 transition-colors"
+                aria-label={t.nav.logout}
+                title={t.nav.logout}
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
             </div>
           )}
         </div>
