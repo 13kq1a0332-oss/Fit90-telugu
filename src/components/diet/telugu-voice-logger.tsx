@@ -587,3 +587,4 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
     </TiltCard>
   );
 }
+

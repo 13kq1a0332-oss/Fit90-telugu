@@ -13,17 +13,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Lock, Mail, AlertCircle, Info } from "lucide-react";
+import { Lock, Mail, AlertCircle, Info, Phone, Sparkles } from "lucide-react";
+import { MobileOtpAuth } from "./mobile-otp-auth";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectedFrom = searchParams.get("redirectedFrom") || "/dashboard";
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
+  const [authMethod, setAuthMethod] = useState<"email" | "mobile">("email");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [demoNotice, setDemoNotice] = useState<string | null>(null);
+
+  const handleInstantDemoLogin = () => {
+    if (typeof document !== "undefined") {
+      document.cookie = "fit90_client_demo=true; path=/; max-age=604800; SameSite=Lax";
+    }
+
+    const demoUser = {
+      id: "client_demo_user",
+      email: "client.demo@fit90.app",
+      fullName: "శ్రీకాంత్ (Demo Client)",
+      role: "authenticated",
+      authMethod: "instant_demo",
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fit90_current_user", JSON.stringify(demoUser));
+    }
+
+    router.push(redirectedFrom);
+    router.refresh();
+  };
+
+  if (authMethod === "mobile") {
+    return <MobileOtpAuth mode="login" onSwitchToEmail={() => setAuthMethod("email")} />;
+  }
 
   const formSchema = createLoginSchema({
     emailInvalid: t.auth.emailInvalid,
@@ -103,6 +130,24 @@ export function LoginForm() {
         <CardDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
           {t.auth.loginSubtitle}
         </CardDescription>
+
+        {/* Auth Method Switcher Tabs */}
+        <div className="pt-3 flex rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1 text-xs font-bold gap-1">
+          <button
+            type="button"
+            onClick={() => setAuthMethod("mobile")}
+            className="flex-1 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-1"
+          >
+            <Phone className="h-3.5 w-3.5" />
+            <span>{locale === "te" ? "మొబైల్ OTP" : "Mobile OTP"}</span>
+          </button>
+          <button
+            type="button"
+            className="flex-1 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs flex items-center justify-center gap-1"
+          >
+            <span>📧 {locale === "te" ? "ఇమెయిల్" : "Email & Password"}</span>
+          </button>
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -179,7 +224,21 @@ export function LoginForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="flex flex-col gap-3 text-center border-t border-slate-100 pt-4">
+      <CardFooter className="flex flex-col gap-3 text-center border-t border-slate-100 dark:border-slate-800 pt-4">
+        {/* 1-Click Client Demo Bypass */}
+        <button
+          type="button"
+          onClick={handleInstantDemoLogin}
+          className="w-full min-h-[44px] rounded-2xl border-2 border-dashed border-emerald-500/40 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+        >
+          <Sparkles className="h-4 w-4 text-emerald-600" />
+          <span>
+            {locale === "te"
+              ? "🚀 1-క్లిక్ క్లయింట్ డెమో ప్రవేశం (నమోదు అవసరం లేదు)"
+              : "🚀 1-Click Client Test Account (No signup needed)"}
+          </span>
+        </button>
+
         <p className="text-sm text-slate-600 dark:text-slate-400">
           {t.auth.dontHaveAccount}{" "}
           <Link

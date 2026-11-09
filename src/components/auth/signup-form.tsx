@@ -14,15 +14,42 @@ import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
-import { CheckCircle2, UserPlus } from "lucide-react";
+import { CheckCircle2, UserPlus, Phone, Sparkles } from "lucide-react";
+import { MobileOtpAuth } from "./mobile-otp-auth";
 
 export function SignupForm() {
   const router = useRouter();
   const { t, locale, setLocale } = useI18n();
 
+  const [authMethod, setAuthMethod] = useState<"email" | "mobile">("email");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleInstantDemoLogin = () => {
+    if (typeof document !== "undefined") {
+      document.cookie = "fit90_client_demo=true; path=/; max-age=604800; SameSite=Lax";
+    }
+
+    const demoUser = {
+      id: "client_demo_user",
+      email: "client.demo@fit90.app",
+      fullName: "శ్రీకాంత్ (Demo Client)",
+      role: "authenticated",
+      authMethod: "instant_demo",
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fit90_current_user", JSON.stringify(demoUser));
+    }
+
+    router.push("/dashboard");
+    router.refresh();
+  };
+
+  if (authMethod === "mobile") {
+    return <MobileOtpAuth mode="signup" onSwitchToEmail={() => setAuthMethod("email")} />;
+  }
 
   const formSchema = createSignupSchema({
     nameRequired: t.auth.nameRequired,
@@ -127,6 +154,24 @@ export function SignupForm() {
         <CardDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
           {t.auth.signupSubtitle}
         </CardDescription>
+
+        {/* Auth Method Switcher Tabs */}
+        <div className="pt-3 flex rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1 text-xs font-bold gap-1">
+          <button
+            type="button"
+            onClick={() => setAuthMethod("mobile")}
+            className="flex-1 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-1"
+          >
+            <Phone className="h-3.5 w-3.5" />
+            <span>{locale === "te" ? "మొబైల్ OTP" : "Mobile OTP"}</span>
+          </button>
+          <button
+            type="button"
+            className="flex-1 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs flex items-center justify-center gap-1"
+          >
+            <span>📧 {locale === "te" ? "ఇమెయిల్" : "Email & Password"}</span>
+          </button>
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -137,9 +182,21 @@ export function SignupForm() {
         )}
 
         {successMessage && (
-          <Alert variant="success" className="mb-5">
-            <span className="text-sm font-medium">{successMessage}</span>
-          </Alert>
+          <div className="mb-5 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-900 dark:text-emerald-200 text-xs space-y-2.5">
+            <div className="font-bold">{successMessage}</div>
+            <button
+              type="button"
+              onClick={handleInstantDemoLogin}
+              className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition-all"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>
+                {locale === "te"
+                  ? "🚀 ధృవీకరించిన క్లయింట్‌గా డాష్‌బోర్డ్‌లోకి వెళ్లండి"
+                  : "🚀 Continue to Dashboard as Verified Client"}
+              </span>
+            </button>
+          </div>
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -225,7 +282,21 @@ export function SignupForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="flex flex-col gap-3 text-center border-t border-slate-100 pt-4">
+      <CardFooter className="flex flex-col gap-3 text-center border-t border-slate-100 dark:border-slate-800 pt-4">
+        {/* 1-Click Client Demo Bypass */}
+        <button
+          type="button"
+          onClick={handleInstantDemoLogin}
+          className="w-full min-h-[44px] rounded-2xl border-2 border-dashed border-emerald-500/40 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+        >
+          <Sparkles className="h-4 w-4 text-emerald-600" />
+          <span>
+            {locale === "te"
+              ? "🚀 1-క్లిక్ క్లయింట్ డెమో ప్రవేశం (నమోదు అవసరం లేదు)"
+              : "🚀 1-Click Client Test Account (No signup needed)"}
+          </span>
+        </button>
+
         <p className="text-sm text-slate-600 dark:text-slate-400">
           {t.auth.alreadyHaveAccount}{" "}
           <Link
