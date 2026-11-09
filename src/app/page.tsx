@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n/context";
 import { Navbar } from "@/components/layout/navbar";
 import { SafetyBanner } from "@/components/layout/safety-banner";
+import { Footer } from "@/components/layout/footer";
+import { LandingCalculator } from "@/components/home/landing-calculator";
+import { ComparisonSection } from "@/components/home/comparison-section";
+import { TransformationStories } from "@/components/home/transformation-stories";
+import { FaqSection } from "@/components/home/faq-section";
 import { Button } from "@/components/ui/button";
 import {
   Utensils,
@@ -292,20 +297,30 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* INTERACTIVE 90-DAY METABOLIC & MEAL CALCULATOR */}
+        <section className="px-4 py-8 sm:py-12 max-w-5xl mx-auto">
+          <LandingCalculator />
+        </section>
+
         {/* 21ST.DEV STYLE BENTO GRID PILLARS */}
-        <section className="px-4 py-16 max-w-4xl mx-auto">
+        <section className="px-4 py-16 max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 px-3 py-1 rounded-full">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
               {locale === "te" ? "4 మూలస్తంభాలు" : "Core Architecture"}
             </span>
-            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white mt-3">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white mt-3.5">
               {locale === "te"
                 ? "శాస్త్రీయమైన, స్థిరమైన బరువు నిర్వహణ"
                 : "Science-Backed, Sustainable Health"}
             </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-xl mx-auto">
+              {locale === "te"
+                ? "ప్రతి ఫీచర్ భారతీయ జీవక్రియ, సురక్షితమైన ఆహార అలవాట్లు మరియు కీళ్ల పరిరక్షణను దృష్టిలో ఉంచుకుని నిర్మించబడింది."
+                : "Engineered specifically for South Asian metabolic genetics and Indian dietary staples."}
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Bento Card 1: Telugu Diet */}
             <div className="glass-card card-spotlight rounded-3xl p-6 sm:p-7 space-y-3">
               <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
@@ -367,7 +382,73 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* COMPARISON MATRIX SECTION */}
+        <ComparisonSection />
+
+        {/* AUTHENTIC TRANSFORMATION STORIES SECTION */}
+        <TransformationStories />
+
+        {/* FREQUENTLY ASKED QUESTIONS SECTION */}
+        <FaqSection />
+
+        {/* FINAL HIGH-CONVERTING HERO CTA SECTION */}
+        <section className="px-4 py-16 sm:py-20 max-w-4xl mx-auto text-center">
+          <div className="relative overflow-hidden rounded-3xl glass-card border border-emerald-500/30 bg-gradient-to-br from-emerald-600/15 via-teal-600/10 to-slate-900/40 p-8 sm:p-12 shadow-2xl">
+            <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-black uppercase tracking-wider border border-emerald-500/30">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>{locale === "te" ? "మీ ప్రయాణం ఇక్కడే మొదలవుతుంది" : "Start Your 90 Days Today"}</span>
+              </span>
+
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                {locale === "te" ? (
+                  <>
+                    ఆకలి బాధలు లేని, <span className="text-gradient-emerald">ఆరోగ్యకరమైన రేపటికి</span> సిద్ధమా?
+                  </>
+                ) : (
+                  <>
+                    Ready for a <span className="text-gradient-emerald">Healthier, Lighter</span> Future?
+                  </>
+                )}
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                {locale === "te"
+                  ? "ఈరోజే మీ ఉచిత ఖాతాను ప్రారంభించండి. మీ ఇంట్లో వండే ఆహారంతో, మోకాళ్లకు హాని కలగని నడకతో మీ 90 రోజుల లక్ష్యాన్ని చేరుకోండి."
+                  : "Join hundreds of South Indian professionals making sustainable progress with real home meals and joint-friendly steps."}
+              </p>
+
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/signup" className="w-full sm:w-auto">
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto min-h-[52px] px-8 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-base shadow-xl shadow-emerald-600/30 hover:shadow-emerald-600/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    <span>{t.auth.signupButton}</span>
+                    <ArrowRight className="h-5 w-5" />
+                  </button>
+                </Link>
+                <Link href="/login" className="w-full sm:w-auto">
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto min-h-[52px] px-7 rounded-2xl border border-slate-300/80 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-slate-200 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300"
+                  >
+                    {t.auth.loginButton}
+                  </button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Ambient glows inside CTA banner */}
+            <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-emerald-500/25 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -left-16 -top-16 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
+          </div>
+        </section>
       </main>
+
+      {/* COMPREHENSIVE BILINGUAL FOOTER */}
+      <Footer />
     </div>
   );
 }
