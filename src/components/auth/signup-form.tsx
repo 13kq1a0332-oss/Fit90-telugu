@@ -54,10 +54,6 @@ export function SignupForm() {
     }
   };
 
-  if (authMethod === "mobile") {
-    return <MobileOtpAuth mode="signup" onSwitchToEmail={() => setAuthMethod("email")} />;
-  }
-
   const formSchema = createSignupSchema({
     nameRequired: t.auth.nameRequired,
     emailInvalid: t.auth.emailInvalid,
@@ -142,6 +138,10 @@ export function SignupForm() {
       setIsLoading(false);
     }
   };
+
+  if (authMethod === "mobile") {
+    return <MobileOtpAuth mode="signup" onSwitchToEmail={() => setAuthMethod("email")} />;
+  }
 
   return (
     <Card className="w-full max-w-md glass-card rounded-3xl p-2 sm:p-3 shadow-2xl border border-slate-200/80 dark:border-slate-800/90 relative overflow-hidden">

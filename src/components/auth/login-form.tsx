@@ -55,10 +55,6 @@ export function LoginForm() {
     }
   };
 
-  if (authMethod === "mobile") {
-    return <MobileOtpAuth mode="login" onSwitchToEmail={() => setAuthMethod("email")} />;
-  }
-
   const formSchema = createLoginSchema({
     emailInvalid: t.auth.emailInvalid,
     passwordRequired: t.auth.passwordPlaceholder,
@@ -118,6 +114,10 @@ export function LoginForm() {
       setIsLoading(false);
     }
   };
+
+  if (authMethod === "mobile") {
+    return <MobileOtpAuth mode="login" onSwitchToEmail={() => setAuthMethod("email")} />;
+  }
 
   return (
     <Card className="w-full max-w-md glass-card rounded-3xl p-2 sm:p-3 shadow-2xl border border-slate-200/80 dark:border-slate-800/90 relative overflow-hidden">

@@ -446,7 +446,7 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
           </p>
           {transcript && (
             <p className="text-sm font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 max-w-md mx-auto">
-              "{transcript}"
+              {`"${transcript}"`}
             </p>
           )}
         </div>
