@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { SafetyBanner } from "@/components/layout/safety-banner";
 import { Footer } from "@/components/layout/footer";
 import { LandingCalculator } from "@/components/home/landing-calculator";
+import { MacroPlateVisualizer } from "@/components/home/macro-plate-visualizer";
 import { ComparisonSection } from "@/components/home/comparison-section";
 import { TransformationStories } from "@/components/home/transformation-stories";
 import { FaqSection } from "@/components/home/faq-section";
@@ -382,6 +383,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* 40/30/30 SOUTH INDIAN MACRO PLATE VISUALIZER */}
+        <MacroPlateVisualizer />
 
         {/* COMPARISON MATRIX SECTION */}
         <ComparisonSection />

@@ -114,3 +114,4 @@ export function ComparisonSection() {
     </section>
   );
 }
+

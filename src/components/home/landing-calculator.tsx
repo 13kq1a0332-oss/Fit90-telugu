@@ -9,6 +9,7 @@ import {
   Gender,
   ActivityLevel,
 } from "@/lib/health-calculations";
+import { KineticCounter } from "@/components/ui/kinetic-counter";
 import {
   Scale,
   Flame,
@@ -217,9 +218,10 @@ export function LandingCalculator() {
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
                     {locale === "te" ? "ఆసియా-భారతీయ BMI" : "Asian Indian BMI"}
                   </span>
-                  <span className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">
-                    {bmiResult.bmi} <span className="text-xs font-normal text-slate-400">kg/m²</span>
-                  </span>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">
+                    <KineticCounter value={bmiResult.bmi} decimals={1} />{" "}
+                    <span className="text-xs font-normal text-slate-400">kg/m²</span>
+                  </div>
                 </div>
                 <span
                   className={`text-xs font-black px-3 py-1 rounded-full ${
@@ -243,12 +245,12 @@ export function LandingCalculator() {
                 <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                   <span>{locale === "te" ? "90 రోజుల లక్ష్య బరువు:" : "Achievable 90-Day Goal:"}</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-black text-sm">
-                    {weightKg} kg → {estimated90DayWeight} kg (-{targetLossKg} kg)
+                    {weightKg} kg → <KineticCounter value={estimated90DayWeight} decimals={1} suffix=" kg" /> (-<KineticCounter value={targetLossKg} decimals={1} suffix=" kg" />)
                   </span>
                 </div>
                 <div className="w-full bg-slate-200/70 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full"
+                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full transition-all duration-500"
                     style={{ width: "70%" }}
                   />
                 </div>
@@ -268,7 +270,7 @@ export function LandingCalculator() {
                   <Flame className="h-4 w-4" />
                 </div>
                 <div className="text-xl font-black tabular-nums">
-                  {caloriePlan.calorieTargetMin}-{caloriePlan.calorieTargetMax}
+                  <KineticCounter value={caloriePlan.calorieTargetMin} /> - <KineticCounter value={caloriePlan.calorieTargetMax} />
                 </div>
                 <span className="text-[10px] text-orange-700 dark:text-orange-300 font-semibold block">
                   kcal / రోజుకు (Safe Deficit)
@@ -281,7 +283,7 @@ export function LandingCalculator() {
                   <Dumbbell className="h-4 w-4" />
                 </div>
                 <div className="text-xl font-black tabular-nums">
-                  {caloriePlan.proteinTargetMinG}-{caloriePlan.proteinTargetMaxG} g
+                  <KineticCounter value={caloriePlan.proteinTargetMinG} /> - <KineticCounter value={caloriePlan.proteinTargetMaxG} /> g
                 </div>
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold block">
                   కండరాల రక్షణ కోసం
@@ -294,7 +296,7 @@ export function LandingCalculator() {
                   <Droplets className="h-4 w-4" />
                 </div>
                 <div className="text-xl font-black tabular-nums">
-                  {Math.round(caloriePlan.dailyWaterTargetMl / 100) / 10} L
+                  <KineticCounter value={Math.round(caloriePlan.dailyWaterTargetMl / 100) / 10} decimals={1} suffix=" L" />
                 </div>
                 <span className="text-[10px] text-cyan-700 dark:text-cyan-300 font-semibold block">
                   (~{Math.round(caloriePlan.dailyWaterTargetMl / 250)} గ్లాసులు)
@@ -307,7 +309,7 @@ export function LandingCalculator() {
                   <Footprints className="h-4 w-4" />
                 </div>
                 <div className="text-xl font-black tabular-nums">
-                  {caloriePlan.dailyStepTarget.toLocaleString()}
+                  <KineticCounter value={caloriePlan.dailyStepTarget} />
                 </div>
                 <span className="text-[10px] text-amber-700 dark:text-amber-300 font-semibold block">
                   అడుగులు / 20 నిమిషాలు
@@ -353,3 +355,4 @@ export function LandingCalculator() {
     </div>
   );
 }
+
