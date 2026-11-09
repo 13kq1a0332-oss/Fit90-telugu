@@ -50,7 +50,7 @@ export function MobileOtpAuth({ mode, onSwitchToEmail }: MobileOtpAuthProps) {
     return () => clearInterval(interval);
   }, [step, resendTimer]);
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     setErrorMessage(null);
     const cleanNumber = phoneNumber.replace(/\D/g, "");
 
@@ -74,7 +74,21 @@ export function MobileOtpAuth({ mode, onSwitchToEmail }: MobileOtpAuthProps) {
 
     setIsSending(true);
 
-    // Generate a clean 6-digit OTP
+    // Try real Supabase Phone OTP first if configured
+    let usedRealSms = false;
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithOtp({
+        phone: `+91${cleanNumber}`,
+      });
+      if (!error && data) {
+        usedRealSms = true;
+      }
+    } catch {
+      // Fallback to local demo gateway
+    }
+
+    // Generate a clean 6-digit OTP for testing & development
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
 
@@ -83,11 +97,15 @@ export function MobileOtpAuth({ mode, onSwitchToEmail }: MobileOtpAuthProps) {
       setStep("otp");
       setResendTimer(30);
 
-      // Trigger realistic Simulated SMS Toast
+      // Trigger informative SMS Toast
       setSimulatedSmsToast(
-        locale === "te"
-          ? `📲 [Fit90 SMS గేట్‌వే] మీ ఖాతా ధృవీకరణ OTP: ${code} (ఈ కోడ్ ఎవరితోనూ పంచుకోవద్దు)`
-          : `📲 [Fit90 SMS Gateway] Your verification OTP code is: ${code} (Do not share)`
+        usedRealSms
+          ? locale === "te"
+            ? `📲 మీ మొబైల్ (+91 ${cleanNumber}) కు నిజమైన SMS పంపబడింది. దయచేసి మెసేజ్ చెక్ చేయండి.`
+            : `📲 Real SMS sent to +91 ${cleanNumber}. Please check your phone messages.`
+          : locale === "te"
+          ? `📲 [Fit90 Demo SMS గేట్‌వే] మీ ఖాతా ధృవీకరణ OTP: ${code} (టెస్టింగ్ కోసం స్క్రీన్‌పై చూపించబడింది)`
+          : `📲 [Fit90 Demo SMS Gateway] Your verification OTP code is: ${code} (Shown on screen for testing)`
       );
 
       // Trigger haptic vibration if supported
@@ -256,6 +274,11 @@ export function MobileOtpAuth({ mode, onSwitchToEmail }: MobileOtpAuthProps) {
             <div className="flex items-center justify-between font-bold">
               <span>{simulatedSmsToast}</span>
             </div>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              {locale === "te"
+                ? "💡 గమనిక: లైవ్ ప్రొడక్షన్‌లో మొబైల్ హ్యాండ్‌సెట్‌కు నిజమైన టెక్స్ట్ మెసేజ్ రావడానికి Twilio/MSG91 కనెక్ట్ చేయాలి. తక్షణ టెస్టింగ్ కోసం OTP ఇక్కడే ఇవ్వబడింది."
+                : "💡 Note: For real cellular text messages to your physical handset, connect Twilio/MSG91. Code is shown here for instant testing."}
+            </p>
             <button
               type="button"
               onClick={handleAutoFillOtp}

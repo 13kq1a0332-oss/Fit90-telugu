@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import {
-  FOOD_CATALOG,
   FoodItemNutrition,
   FoodCategory,
 } from "@/lib/data/food-catalog";
+import { getAllFoods } from "@/lib/data/custom-food-store";
 import { PortionCalculatorModal } from "./portion-calculator-modal";
-import { MealType } from "@/lib/diet-store";
+import { AddCustomFoodModal } from "./add-custom-food-modal";
+import { MealType, addFoodLogEntry, getTodayDateString } from "@/lib/diet-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,8 @@ import {
   Sparkles,
   Info,
   Check,
+  Plus,
+  Home,
 } from "lucide-react";
 
 interface FoodSearchCatalogProps {
@@ -32,12 +35,27 @@ export function FoodSearchCatalog({
   defaultMealType = "lunch",
 }: FoodSearchCatalogProps) {
   const { locale, t } = useI18n();
+  const [foodsList, setFoodsList] = useState<FoodItemNutrition[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [stateFilter, setStateFilter] = useState<"all" | "cooked" | "raw">("all");
   const [selectedFood, setSelectedFood] = useState<FoodItemNutrition | null>(null);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFoodsList(getAllFoods());
+  }, []);
+
+  const refreshFoods = () => {
+    setFoodsList(getAllFoods());
+    showToast(
+      locale === "te"
+        ? "కొత్త ఇంటి వంటకం కేటలాగ్‌లో విజయవంతంగా చేర్చబడింది!"
+        : "Home food added to catalog successfully!"
+    );
+  };
 
   const categories: { id: string; labelEn: string; labelTe: string }[] = [
     { id: "all", labelEn: "All Foods", labelTe: "అన్ని ఆహారాలు" },
@@ -52,7 +70,7 @@ export function FoodSearchCatalog({
   ];
 
   const filteredFoods = useMemo(() => {
-    return FOOD_CATALOG.filter((food) => {
+    return foodsList.filter((food) => {
       // Category filter
       if (selectedCategory !== "all" && food.category !== selectedCategory) {
         return false;
@@ -75,7 +93,7 @@ export function FoodSearchCatalog({
 
       return true;
     });
-  }, [selectedCategory, stateFilter, searchTerm]);
+  }, [foodsList, selectedCategory, stateFilter, searchTerm]);
 
   const handleOpenCalculator = (food: FoodItemNutrition) => {
     setSelectedFood(food);
@@ -89,26 +107,44 @@ export function FoodSearchCatalog({
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-        <Input
-          type="search"
-          placeholder={t.diet.searchPlaceholder}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-          aria-label="Search foods"
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm("")}
-            className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5"
-          >
-            Clear
-          </button>
-        )}
+      {/* Search Bar & Add Custom Food Action */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+          <Input
+            type="search"
+            placeholder={t.diet.searchPlaceholder}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            aria-label="Search foods"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <Button
+          type="button"
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700 transition-all shrink-0 flex items-center justify-center gap-1.5"
+        >
+          <Plus className="h-4 w-4" />
+          <span>{locale === "te" ? "కొత్త వంటకం జోడించండి" : "Add Custom Food"}</span>
+        </Button>
       </div>
+
+      {toastMessage && (
+        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in">
+          <Check className="h-4 w-4 text-emerald-600" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {/* Category Pills (Horizontal Scrollable) */}
       <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
@@ -163,7 +199,7 @@ export function FoodSearchCatalog({
         </div>
 
         <span className="text-slate-500 dark:text-slate-400 font-medium">
-          {filteredFoods.length} {locale === "te" ? "ఆహారాలు కనుగొనబడ్డాయి" : "foods found"}
+          {filteredFoods.length} {locale === "te" ? "ఆహారాలు అందుబాటులో ఉన్నాయి" : "foods available"}
         </span>
       </div>
 
@@ -177,160 +213,183 @@ export function FoodSearchCatalog({
 
       {/* Foods Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {filteredFoods.map((food) => (
-          <Card
-            key={food.id}
-            className="hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-xs"
-          >
-            <CardContent className="p-4 flex flex-col justify-between h-full">
-              <div>
-                {/* Header row: Name, Veg badge, Cooked/Raw */}
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div>
-                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-base leading-tight">
-                      {locale === "te" ? food.nameTe : food.nameEn}
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-                      {locale === "te" ? food.nameEn : food.nameTe}
+        {filteredFoods.map((food) => {
+          const isCustom = food.id.startsWith("custom_");
+          return (
+            <Card
+              key={food.id}
+              className="hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-xs"
+            >
+              <CardContent className="p-4 flex flex-col justify-between h-full">
+                <div>
+                  {/* Header row: Name, Veg badge, Cooked/Raw */}
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-base leading-tight">
+                          {locale === "te" ? food.nameTe : food.nameEn}
+                        </h4>
+                        {isCustom && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 flex items-center gap-0.5">
+                            <Home className="h-2.5 w-2.5" />
+                            <span>{locale === "te" ? "ఇంటి వంట" : "Custom"}</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+                        {locale === "te" ? food.nameEn : food.nameTe}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      {/* Veg/Non-veg mark */}
+                      <span
+                        title={food.isVegetarian ? "Vegetarian" : "Non-Vegetarian"}
+                        className={`inline-block w-3 h-3 rounded-full border ${
+                          food.isVegetarian
+                            ? "bg-emerald-500 border-emerald-700"
+                            : "bg-red-500 border-red-700"
+                        }`}
+                      />
+                      {/* Cooked/Raw Badge */}
+                      <span
+                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                          food.state === "cooked"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                            : "bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                        }`}
+                      >
+                        {food.state === "cooked"
+                          ? locale === "te" ? "వండినది" : "Cooked"
+                          : locale === "te" ? "పచ్చిది" : "Raw"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Standard Serving Size Note */}
+                  <div className="text-xs text-slate-600 dark:text-slate-300 mb-3 flex items-center gap-1.5">
+                    <Scale className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      {locale === "te" ? food.servingUnitTe : food.servingUnitEn}
+                    </span>
+                    <span className="text-slate-400">|</span>
+                    <span className="text-slate-500">
+                      ₹{food.estimatedCostInr} / 100g
+                    </span>
+                  </div>
+
+                  {/* Macro Badges Grid */}
+                  <div className="grid grid-cols-4 gap-1 text-center bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg mb-3">
+                    <div>
+                      <div className="text-[10px] text-slate-500 font-medium">Kcal</div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {food.per100g.calories}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-500 font-medium">Protein</div>
+                      <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        {food.per100g.proteinG}g
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-500 font-medium">Carbs</div>
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {food.per100g.carbsG}g
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-500 font-medium">Fat</div>
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {food.per100g.fatG}g
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes / Metabolic Guidance */}
+                  {(food.notesEn || food.notesTe) && (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 italic mb-3">
+                      {locale === "te" ? food.notesTe : food.notesEn}
                     </p>
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    {/* Veg/Non-veg mark */}
-                    <span
-                      title={food.isVegetarian ? "Vegetarian" : "Non-Vegetarian"}
-                      className={`inline-block w-3 h-3 rounded-full border ${
-                        food.isVegetarian
-                          ? "bg-emerald-500 border-emerald-700"
-                          : "bg-red-500 border-red-700"
-                      }`}
-                    />
-                    {/* Cooked/Raw Badge */}
-                    <span
-                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                        food.state === "cooked"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                          : "bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-                      }`}
-                    >
-                      {food.state === "cooked"
-                        ? locale === "te" ? "వండినది" : "Cooked"
-                        : locale === "te" ? "పచ్చిది" : "Raw"}
-                    </span>
-                  </div>
+                  )}
                 </div>
 
-                {/* Per-100g Macro Grid */}
-                <div className="grid grid-cols-4 gap-1 bg-slate-50 dark:bg-slate-800/60 rounded-md p-2 my-2 text-center text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">Kcal</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {food.per100g.calories}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">Protein</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {food.per100g.proteinG}g
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">Carbs</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                      {food.per100g.carbsG}g
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">Fat</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                      {food.per100g.fatG}g
-                    </span>
-                  </div>
-                </div>
-
-                {/* Standard serving & Cost info */}
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-3 px-1">
-                  <span>
-                    🥣 {locale === "te" ? food.servingUnitTe : food.servingUnitEn} (~{food.standardServingG}g)
-                  </span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    ₹{food.estimatedCostInr} / 100g
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleOpenCalculator(food)}
-                className="w-full text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-700 dark:hover:bg-emerald-950/40"
-              >
-                <Scale className="h-3.5 w-3.5 mr-1.5" />
-                {t.diet.calculatePortion}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-
-        {filteredFoods.length === 0 && (
-          <div className="col-span-full py-12 text-center text-slate-500 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
-            <Search className="h-8 w-8 mx-auto text-slate-400 mb-2 opacity-50" />
-            <p className="font-medium">
-              {locale === "te" ? "ఎటువంటి ఆహారాలు కనుగొనబడలేదు" : "No matching foods found"}
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              {locale === "te"
-                ? "వేరే పదాన్ని వెతకండి లేదా ఫిల్టర్‌లను మార్చండి"
-                : "Try searching for a different keyword or resetting filters"}
-            </p>
-          </div>
-        )}
+                {/* Calculate & Log Button */}
+                <Button
+                  onClick={() => handleOpenCalculator(food)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors"
+                >
+                  <Scale className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+                  {t.diet.calculatePortion}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Calculator Modal */}
-      <PortionCalculatorModal
-        food={selectedFood}
-        isOpen={isCalculatorOpen}
-        onClose={() => setIsCalculatorOpen(false)}
-        initialMealType={defaultMealType}
-        onLog={async (entry) => {
-          const { addFoodLogEntry, getTodayDateString } = await import("@/lib/diet-store");
-          await addFoodLogEntry({
-            foodItemId: entry.food.id,
-            foodNameEn: entry.food.nameEn,
-            foodNameTe: entry.food.nameTe,
-            mealType: entry.mealType,
-            portionG: entry.portionG,
-            portionUnitLabel: entry.unitLabel,
-            calories: entry.calories,
-            proteinG: entry.proteinG,
-            carbsG: entry.carbsG,
-            fatG: entry.fatG,
-            fiberG: entry.fiberG,
-            estimatedCostInr: entry.estimatedCostInr,
-            loggedDate: getTodayDateString(),
-            loggedTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          });
-
-          showToast(
-            locale === "te"
-              ? `${entry.food.nameTe} (${entry.portionG}g) విజయవంతంగా నమోదైంది!`
-              : `Logged ${entry.food.nameEn} (${entry.portionG}g) successfully!`
-          );
-
-          if (onFoodLogged) onFoodLogged();
-        }}
-      />
-
-      {/* Floating Success Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-900 text-white px-4 py-2.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
+      {filteredFoods.length === 0 && (
+        <div className="text-center py-10 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+          <p className="text-sm text-slate-500 font-medium">
+            {locale === "te"
+              ? "ఏ ఆహారాలు కనుగొనబడలేదు. 'కొత్త వంటకం జోడించండి' బటన్ ద్వారా జోడించవచ్చు."
+              : "No food items found matching your filters. You can add it using 'Add Custom Food'!"}
+          </p>
+          <Button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="mt-3 text-xs font-bold"
+            variant="outline"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            {locale === "te" ? "కొత్త వంటకం జోడించండి" : "Add Custom Food"}
+          </Button>
         </div>
       )}
+
+      {/* Portion Calculator Modal */}
+      {selectedFood && (
+        <PortionCalculatorModal
+          isOpen={isCalculatorOpen}
+          onClose={() => setIsCalculatorOpen(false)}
+          food={selectedFood}
+          initialMealType={defaultMealType}
+          onLog={async (logData) => {
+            await addFoodLogEntry({
+              foodItemId: logData.food.id,
+              foodNameEn: logData.food.nameEn,
+              foodNameTe: logData.food.nameTe,
+              mealType: logData.mealType,
+              portionG: logData.portionG,
+              portionUnitLabel: logData.unitLabel,
+              calories: logData.calories,
+              proteinG: logData.proteinG,
+              carbsG: logData.carbsG,
+              fatG: logData.fatG,
+              fiberG: logData.fiberG,
+              estimatedCostInr: logData.estimatedCostInr,
+              loggedDate: getTodayDateString(),
+              loggedTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            });
+            showToast(
+              locale === "te"
+                ? `${logData.food.nameTe} విజయవంతంగా డైలీ లాగ్‌లో చేర్చబడింది!`
+                : `${logData.food.nameEn} added to daily log!`
+            );
+            if (onFoodLogged) onFoodLogged();
+            setIsCalculatorOpen(false);
+          }}
+        />
+      )}
+
+      {/* Add Custom Home Food Modal */}
+      <AddCustomFoodModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onFoodAdded={refreshFoods}
+      />
     </div>
   );
 }
-

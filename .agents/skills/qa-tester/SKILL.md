@@ -58,3 +58,4 @@ For clinical/health applications:
 - [ ] Zero horizontal scroll at 375px viewport width.
 - [ ] Telugu typography line-height $\ge 1.65$ to prevent diacritic conjunct clipping.
 - [ ] Offline caching via Service Worker.
+

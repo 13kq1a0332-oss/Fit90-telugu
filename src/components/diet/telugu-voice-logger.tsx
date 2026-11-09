@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import { addFoodLogEntry, MealType, getTodayDateString } from "@/lib/diet-store";
+import { getAllFoods } from "@/lib/data/custom-food-store";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,8 @@ import {
   RefreshCw,
   Plus,
   Info,
+  AlertCircle,
+  Search,
 } from "lucide-react";
 
 interface TeluguFoodItem {
@@ -99,79 +102,154 @@ const TELUGU_KNOWLEDGE_BASE: TeluguFoodItem[] = [
     costInr: 20,
   },
   {
-    id: "majiga",
-    nameTe: "చల్లని మజ్జిగ (ఆవాలు, కరివేపాకు)",
-    nameEn: "Spiced Buttermilk (Majjiga)",
-    keywords: ["మజ్జిగ", "majiga", "majjiga", "buttermilk", "చల్ల"],
-    defaultPortionG: 200,
-    portionLabelTe: "1 పెద్ద గ్లాసు (200ml)",
-    portionLabelEn: "1 tall glass (200ml)",
-    calories: 42,
-    proteinG: 2.2,
-    carbsG: 3.6,
-    fatG: 1.8,
+    id: "tomato-pappu",
+    nameTe: "టమోటా కందిపప్పు",
+    nameEn: "Tomato Dal (Tomato Pappu)",
+    keywords: ["టమోటా", "tomato pappu", "tomato", "టమాట"],
+    defaultPortionG: 150,
+    portionLabelTe: "1 గిన్నె (150g)",
+    portionLabelEn: "1 bowl (150g)",
+    calories: 168,
+    proteinG: 10.2,
+    carbsG: 22.2,
+    fatG: 4.6,
+    fiberG: 5.7,
+    costInr: 22,
+  },
+  {
+    id: "majjiga",
+    nameTe: "పోపు మజ్జిగ / బటర్‌మిల్క్",
+    nameEn: "Tempered Buttermilk (Majjiga)",
+    keywords: ["మజ్జిగ", "majjiga", "buttermilk", "చల్ల"],
+    defaultPortionG: 250,
+    portionLabelTe: "1 పెద్ద గ్లాసు (250ml)",
+    portionLabelEn: "1 large glass (250ml)",
+    calories: 45,
+    proteinG: 2.8,
+    carbsG: 4.8,
+    fatG: 1.5,
     fiberG: 0.2,
     costInr: 8,
   },
   {
     id: "chicken-curry",
-    nameTe: "ఆంధ్ర నాటు కోడి / చికెన్ కూర",
-    nameEn: "South Indian Chicken Curry",
-    keywords: ["చికెన్", "కోడి", "chicken", "kodi", "కూర"],
+    nameTe: "ఆంధ్ర చికెన్ కూర",
+    nameEn: "Andhra Chicken Curry",
+    keywords: ["చికెన్", "chicken", "కోడి", "curry", "కూర"],
     defaultPortionG: 150,
-    portionLabelTe: "1 కప్పు (150g)",
-    portionLabelEn: "1 cup (150g)",
-    calories: 240,
-    proteinG: 26.5,
-    carbsG: 4.5,
-    fatG: 12.0,
-    fiberG: 1.5,
+    portionLabelTe: "1 గిన్నె / 3-4 ముక్కలు (150g)",
+    portionLabelEn: "1 bowl / 3-4 pieces (150g)",
+    calories: 225,
+    proteinG: 24.5,
+    carbsG: 5.2,
+    fatG: 11.8,
+    fiberG: 1.2,
     costInr: 65,
   },
   {
-    id: "idli-sambar",
-    nameTe: "ఆవిరి ఇడ్లీలు + సాంబార్",
-    nameEn: "Steamed Idli with Sambar",
-    keywords: ["ఇడ్లీ", "ఇడ్లీలు", "idli", "idly", "సాంబార్", "sambar"],
-    defaultPortionG: 160,
-    portionLabelTe: "2 ఇడ్లీలు + సాంబార్ (160g)",
-    portionLabelEn: "2 Idlis + Sambar (160g)",
-    calories: 180,
-    proteinG: 6.2,
-    carbsG: 34.0,
-    fatG: 1.5,
-    fiberG: 3.2,
-    costInr: 22,
-  },
-  {
-    id: "chapati",
-    nameTe: "గోధుమ చపాతీలు",
-    nameEn: "Whole Wheat Chapatis",
-    keywords: ["చపాతీ", "రోటీ", "chapati", "roti", "రొట్టె"],
+    id: "plain-dosa",
+    nameTe: "దోస / అట్టు",
+    nameEn: "Plain Dosa / Attu",
+    keywords: ["దోస", "dosa", "అట్టు", "attu", "dosalu"],
     defaultPortionG: 80,
-    portionLabelTe: "2 చపాతీలు (80g)",
-    portionLabelEn: "2 Chapatis (80g)",
-    calories: 208,
-    proteinG: 6.4,
-    carbsG: 38.0,
-    fatG: 3.2,
-    fiberG: 4.8,
-    costInr: 12,
+    portionLabelTe: "1 దోస (80g)",
+    portionLabelEn: "1 dosa (80g)",
+    calories: 135,
+    proteinG: 3.1,
+    carbsG: 23.6,
+    fatG: 3.0,
+    fiberG: 1.1,
+    costInr: 10,
   },
   {
-    id: "paneer-bhurji",
-    nameTe: "పన్నీర్ భుర్జీ",
-    nameEn: "Low-Oil Paneer Bhurji",
-    keywords: ["పన్నీర్", "paneer", "పనీర్", "భుర్జీ"],
-    defaultPortionG: 100,
-    portionLabelTe: "1 కప్పు (100g)",
-    portionLabelEn: "1 cup (100g)",
-    calories: 215,
-    proteinG: 14.8,
-    carbsG: 5.2,
-    fatG: 15.0,
-    fiberG: 1.2,
-    costInr: 45,
+    id: "idli",
+    nameTe: "ఇడ్లీ (2 ముక్కలు) సాంబార్‌తో",
+    nameEn: "Steamed Idli (2 pieces)",
+    keywords: ["ఇడ్లీ", "idli", "idly", "ఇడ్లీలు"],
+    defaultPortionG: 120,
+    portionLabelTe: "2 ఇడ్లీలు (120g)",
+    portionLabelEn: "2 idlis (120g)",
+    calories: 140,
+    proteinG: 4.8,
+    carbsG: 28.5,
+    fatG: 0.6,
+    fiberG: 2.0,
+    costInr: 15,
+  },
+  {
+    id: "upma",
+    nameTe: "రవ్వ ఉప్మా",
+    nameEn: "Rava Upma with Veggies",
+    keywords: ["ఉప్మా", "upma", "రవ్వ"],
+    defaultPortionG: 150,
+    portionLabelTe: "1 గిన్నె (150g)",
+    portionLabelEn: "1 bowl (150g)",
+    calories: 213,
+    proteinG: 5.4,
+    carbsG: 37.2,
+    fatG: 4.8,
+    fiberG: 2.7,
+    costInr: 18,
+  },
+  {
+    id: "sambar",
+    nameTe: "మునక్కాయ సాంబార్",
+    nameEn: "Drumstick Sambar",
+    keywords: ["సాంబార్", "sambar", "మునక్కాయ"],
+    defaultPortionG: 180,
+    portionLabelTe: "1 పెద్ద గిన్నె (180g)",
+    portionLabelEn: "1 large bowl (180g)",
+    calories: 130,
+    proteinG: 6.3,
+    carbsG: 20.2,
+    fatG: 2.9,
+    fiberG: 5.0,
+    costInr: 25,
+  },
+  {
+    id: "rasam",
+    nameTe: "మిరియాల చారు / రసం",
+    nameEn: "Pepper Rasam / Charu",
+    keywords: ["రసం", "rasam", "చారు", "charu", "మిరియాల"],
+    defaultPortionG: 150,
+    portionLabelTe: "1 గిన్నె (150ml)",
+    portionLabelEn: "1 bowl (150ml)",
+    calories: 42,
+    proteinG: 1.2,
+    carbsG: 6.8,
+    fatG: 1.2,
+    fiberG: 1.0,
+    costInr: 9,
+  },
+  {
+    id: "ragi-mudde",
+    nameTe: "రాగి సంకటి / ముద్ద",
+    nameEn: "Ragi Mudde / Sankati",
+    keywords: ["రాగి", "సంకటి", "ముద్ద", "ragi", "sankati", "mudde"],
+    defaultPortionG: 200,
+    portionLabelTe: "1 ముద్ద (200g)",
+    portionLabelEn: "1 ball (200g)",
+    calories: 220,
+    proteinG: 5.2,
+    carbsG: 46.8,
+    fatG: 1.6,
+    fiberG: 6.4,
+    costInr: 16,
+  },
+  {
+    id: "curd-rice",
+    nameTe: "దద్ధోజనం / పెరుగన్నం",
+    nameEn: "Curd Rice (Daddojanam)",
+    keywords: ["పెరుగు", "దద్ధోజనం", "curd rice", "daddojanam", "పెరుగన్నం"],
+    defaultPortionG: 180,
+    portionLabelTe: "1 గిన్నె (180g)",
+    portionLabelEn: "1 bowl (180g)",
+    calories: 212,
+    proteinG: 6.5,
+    carbsG: 35.6,
+    fatG: 5.0,
+    fiberG: 0.7,
+    costInr: 25,
   },
 ];
 
@@ -187,6 +265,7 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
   const [manualInput, setManualInput] = useState("");
   const [speechLanguage, setSpeechLanguage] = useState<"te-IN" | "en-IN">("te-IN");
   const [speechSupported, setSpeechSupported] = useState(true);
+  const [micErrorMessage, setMicErrorMessage] = useState<string | null>(null);
   const [detectedMatch, setDetectedMatch] = useState<TeluguFoodItem | null>(null);
   const [multiplier, setMultiplier] = useState(1);
   const [selectedMeal, setSelectedMeal] = useState<MealType>("lunch");
@@ -206,6 +285,8 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
 
   // Initialize Speech Recognition
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -222,6 +303,7 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
 
       recognition.onstart = () => {
         setIsListening(true);
+        setMicErrorMessage(null);
         setFeedbackSuccess(null);
       };
 
@@ -231,12 +313,32 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
           currentText += event.results[i][0].transcript;
         }
         setTranscript(currentText);
+        setManualInput(currentText);
         parseVoiceInput(currentText);
       };
 
       recognition.onerror = (event: any) => {
         console.warn("Speech recognition error:", event.error);
         setIsListening(false);
+        if (event.error === "not-allowed") {
+          setMicErrorMessage(
+            locale === "te"
+              ? "మైక్రోఫోన్ అనుమతి అవసరం: దయచేసి బ్రౌజర్ అడ్రస్ బార్‌లో 'Allow' క్లిక్ చేయండి."
+              : "Microphone blocked: Please click the lock/mic icon in your address bar and select 'Allow'."
+          );
+        } else if (event.error === "no-speech") {
+          setMicErrorMessage(
+            locale === "te"
+              ? "ధ్వని వినబడలేదు. దయచేసి మైక్ నొక్కి స్పష్టంగా మాట్లాడండి లేదా కింద టైప్ చేయండి."
+              : "No speech detected. Please tap the mic again, or type below."
+          );
+        } else {
+          setMicErrorMessage(
+            locale === "te"
+              ? `వాయిస్ ఎర్రర్ (${event.error}). కింద బాక్స్‌లో నేరుగా టైప్ చేయవచ్చు.`
+              : `Speech error (${event.error}). You can also type directly below.`
+          );
+        }
       };
 
       recognition.onend = () => {
@@ -256,42 +358,76 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
         } catch {}
       }
     };
-  }, [speechLanguage]);
+  }, [speechLanguage, locale]);
 
   const toggleListening = () => {
-    if (!recognitionRef.current) return;
+    setMicErrorMessage(null);
+    setFeedbackSuccess(null);
+
+    const SpeechRecognition =
+      typeof window !== "undefined" &&
+      ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      setMicErrorMessage(
+        locale === "te"
+          ? "ఈ బ్రౌజర్‌లో వాయిస్ రికగ్నిషన్ సపోర్ట్ లేదు. దయచేసి కింద ఉన్న శోధన బాక్స్‌లో టైప్ చేయండి."
+          : "Web Speech API is not supported in this browser. Please use the search input below."
+      );
+      return;
+    }
 
     if (isListening) {
-      recognitionRef.current.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       setIsListening(false);
     } else {
       setTranscript("");
       setDetectedMatch(null);
       setMultiplier(1);
       try {
-        recognitionRef.current.lang = speechLanguage;
-        recognitionRef.current.start();
+        if (recognitionRef.current) {
+          recognitionRef.current.lang = speechLanguage;
+          recognitionRef.current.start();
+        }
       } catch (e) {
         console.warn("Speech start error:", e);
+        // Sometimes recognition needs re-instantiating
+        setIsListening(false);
       }
     }
   };
 
   const parseVoiceInput = (rawText: string) => {
     const textLower = rawText.toLowerCase().trim();
+    if (!textLower) return;
 
     // Check for quantity multipliers in Telugu / English
     let factor = 1;
-    if (textLower.includes("రెండు") || textLower.includes("2") || textLower.includes("two")) {
+    if (
+      textLower.includes("రెండు") ||
+      textLower.includes("2") ||
+      textLower.includes("two") ||
+      textLower.includes("డబుల్")
+    ) {
       factor = 2;
     } else if (textLower.includes("మూడు") || textLower.includes("3") || textLower.includes("three")) {
       factor = 3;
-    } else if (textLower.includes("అర") || textLower.includes("సగం") || textLower.includes("half")) {
+    } else if (textLower.includes("నాలుగు") || textLower.includes("4") || textLower.includes("four")) {
+      factor = 4;
+    } else if (
+      textLower.includes("అర") ||
+      textLower.includes("సగం") ||
+      textLower.includes("half") ||
+      textLower.includes("0.5")
+    ) {
       factor = 0.5;
     }
     setMultiplier(factor);
 
-    // Match keywords against Telugu database
+    // 1. Search in Telugu Knowledge Base first
     for (const item of TELUGU_KNOWLEDGE_BASE) {
       const matched = item.keywords.some((kw) => textLower.includes(kw.toLowerCase()));
       if (matched) {
@@ -300,7 +436,33 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
       }
     }
 
-    // If no match found, fallback to generic
+    // 2. Search in all catalog & custom home foods
+    const allFoods = getAllFoods();
+    for (const food of allFoods) {
+      const matchesTe = food.nameTe.toLowerCase().includes(textLower);
+      const matchesEn = food.nameEn.toLowerCase().includes(textLower);
+      if (matchesTe || matchesEn) {
+        // Convert to TeluguFoodItem shape
+        setDetectedMatch({
+          id: food.id,
+          nameTe: food.nameTe,
+          nameEn: food.nameEn,
+          keywords: [food.nameTe, food.nameEn],
+          defaultPortionG: food.standardServingG,
+          portionLabelTe: food.servingUnitTe,
+          portionLabelEn: food.servingUnitEn,
+          calories: Math.round((food.per100g.calories * food.standardServingG) / 100),
+          proteinG: Math.round(((food.per100g.proteinG * food.standardServingG) / 100) * 10) / 10,
+          carbsG: Math.round(((food.per100g.carbsG * food.standardServingG) / 100) * 10) / 10,
+          fatG: Math.round(((food.per100g.fatG * food.standardServingG) / 100) * 10) / 10,
+          fiberG: Math.round(((food.per100g.fiberG * food.standardServingG) / 100) * 10) / 10,
+          costInr: food.estimatedCostInr,
+        });
+        return;
+      }
+    }
+
+    // If no match found
     setDetectedMatch(null);
   };
 
@@ -348,47 +510,60 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
       // Trigger light haptic if supported
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         try {
-          navigator.vibrate([40, 60, 40]);
+          navigator.vibrate([40, 30, 40]);
         } catch {}
       }
 
-      onEntryAdded?.();
+      setTranscript("");
+      setManualInput("");
+      setDetectedMatch(null);
+      setMultiplier(1);
+      if (onEntryAdded) onEntryAdded();
+    } catch (e) {
+      console.warn("Failed to add food log:", e);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <TiltCard className="w-full glass-card rounded-3xl p-5 sm:p-7 shadow-xl border border-slate-200/80 dark:border-slate-800/90 relative overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/60 dark:border-slate-800 pb-4">
+    <Card className="glass-card rounded-3xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden relative">
+      {/* Decorative ambient background glows */}
+      <div className="absolute -top-16 -right-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Header with Title and Language Mode Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
-            <Mic className="h-6 w-6" />
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
+            <Mic className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{locale === "te" ? "తెలుగు వాయిస్ ఫుడ్ లాగర్" : "Telugu Voice-to-Plate Logger"}</span>
-              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                {locale === "te" ? "తెలుగు వాయిస్-టు-ప్లేట్ లాగర్" : "Telugu Voice-to-Plate Logger"}
+              </h2>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                 Web Speech AI
               </span>
-            </h2>
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {locale === "te"
-                ? "మీరు తిన్న ఆహారాన్ని తెలుగులో లేదా ఇంగ్లీష్‌లో మాట్లాడితే తక్షణమే పోషకాలు లెక్కిస్తుంది."
-                : "Speak your South Indian meal to instantly estimate calories and protein."}
+                ? "మీ భోజనాన్ని తెలుగులో లేదా ఇంగ్లీషులో మాట్లాడండి లేదా టైప్ చేయండి"
+                : "Speak or type your South Indian meal to instantly estimate calories and protein"}
             </p>
           </div>
         </div>
 
-        {/* Language selector toggle */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold gap-1 self-start sm:self-auto">
+        {/* Language Selection Buttons */}
+        <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-bold self-start sm:self-center">
           <button
             type="button"
             onClick={() => setSpeechLanguage("te-IN")}
-            className={`px-3 py-1 rounded-lg transition-all ${
+            className={`px-3 py-1.5 rounded-lg transition-all ${
               speechLanguage === "te-IN"
                 ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
-                : "text-slate-500"
+                : "text-slate-500 hover:text-slate-900"
             }`}
           >
             తెలుగు (te-IN)
@@ -396,10 +571,10 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
           <button
             type="button"
             onClick={() => setSpeechLanguage("en-IN")}
-            className={`px-3 py-1 rounded-lg transition-all ${
+            className={`px-3 py-1.5 rounded-lg transition-all ${
               speechLanguage === "en-IN"
                 ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
-                : "text-slate-500"
+                : "text-slate-500 hover:text-slate-900"
             }`}
           >
             English (en-IN)
@@ -409,33 +584,30 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
 
       {/* Main Interactive Mic Center */}
       <div className="py-6 flex flex-col items-center justify-center text-center space-y-4">
-        {speechSupported ? (
-          <div className="relative">
-            {isListening && (
-              <div className="absolute -inset-4 rounded-full bg-emerald-500/25 animate-ping" />
+        <div className="relative">
+          {isListening && (
+            <div className="absolute -inset-4 rounded-full bg-emerald-500/25 animate-ping" />
+          )}
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`relative z-10 h-20 w-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl ${
+              isListening
+                ? "bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-rose-500/30 scale-105"
+                : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/30 hover:scale-105"
+            }`}
+            aria-label="Tap to speak"
+          >
+            {isListening ? (
+              <MicOff className="h-8 w-8 animate-pulse" />
+            ) : (
+              <Mic className="h-8 w-8" />
             )}
-            <button
-              type="button"
-              onClick={toggleListening}
-              className={`relative z-10 h-20 w-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl ${
-                isListening
-                  ? "bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-rose-500/30 scale-105"
-                  : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/30 hover:scale-105"
-              }`}
-            >
-              {isListening ? <MicOff className="h-8 w-8 animate-pulse" /> : <Mic className="h-8 w-8" />}
-            </button>
-          </div>
-        ) : (
-          <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-3 rounded-xl border border-amber-200">
-            {locale === "te"
-              ? "ఈ బ్రౌజర్‌లో మైక్రోఫోన్ ఆటో-రికగ్నిషన్ అందుబాటులో లేదు. కింద ఉన్న శోధన బాక్స్‌ను ఉపయోగించవచ్చు."
-              : "Microphone API not supported on this browser. Use the quick buttons or search input below."}
-          </div>
-        )}
+          </button>
+        </div>
 
         <div className="space-y-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
             {isListening
               ? locale === "te"
                 ? "🎙️ వింటున్నాము... మాట్లాడండి (ఉదా: 'రెండు పెసరట్లు', 'ఒక కప్పు అన్నం')"
@@ -444,19 +616,45 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
               ? "మాట్లాడటానికి మైక్ నొక్కండి"
               : "Tap mic to speak"}
           </p>
-          {transcript && (
+
+          {micErrorMessage && (
+            <div className="max-w-md mx-auto p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+              <span>{micErrorMessage}</span>
+            </div>
+          )}
+
+          {transcript && !micErrorMessage && (
             <p className="text-sm font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 max-w-md mx-auto">
               {`"${transcript}"`}
             </p>
           )}
         </div>
 
-        {/* 1-Tap Quick Demo Phrases for Client Presentations */}
+        {/* Text Input Search Fallback */}
+        <div className="w-full max-w-md mx-auto relative pt-1">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+            <Input
+              type="text"
+              placeholder={
+                locale === "te"
+                  ? "⌨️ లేదా ఇక్కడ టైప్ చేయండి (ఉదా: 2 దోసలు, అన్నం పప్పు, చికెన్ కూర)..."
+                  : "⌨️ Or type here (e.g., 2 dosas, dal rice, chicken curry)..."
+              }
+              value={manualInput}
+              onChange={(e) => handleManualSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 text-xs sm:text-sm rounded-2xl bg-white dark:bg-slate-900 border-slate-200 shadow-xs"
+            />
+          </div>
+        </div>
+
+        {/* 1-Tap Quick Demo Phrases for Presentations */}
         <div className="w-full pt-2">
           <div className="text-[11px] font-bold text-slate-500 mb-2 flex items-center justify-center gap-1">
             <Sparkles className="h-3 w-3 text-amber-500" />
             <span>
-              {locale === "te" ? "తక్షణ క్లయింట్ డెమో ఉదాహరణలు (1-క్లిక్)" : "Quick Demo Phrases (1-Click)"}
+              {locale === "te" ? "తక్షణ ఉదాహరణలు (1-క్లిక్ క్లిక్ చేయండి):" : "Quick Demo Phrases (1-Click):"}
             </span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-1.5">
@@ -467,6 +665,9 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
               "పాలకూర పప్పు",
               "ఒక గ్లాసు మజ్జిగ",
               "చికెన్ కూర",
+              "దోస",
+              "రవ్వ ఉప్మా",
+              "మునక్కాయ సాంబార్",
             ].map((phrase) => (
               <button
                 key={phrase}
@@ -498,93 +699,91 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
               </p>
             </div>
 
-            {/* Meal Type Switcher */}
+            {/* Meal Slot Selector */}
             <div className="flex items-center gap-1.5">
-              {(["breakfast", "lunch", "evening_snack", "dinner"] as MealType[]).map((meal) => (
-                <button
-                  key={meal}
-                  type="button"
-                  onClick={() => setSelectedMeal(meal)}
-                  className={`text-[11px] font-bold px-2 py-1 rounded-lg capitalize transition-all ${
-                    selectedMeal === meal
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  {meal === "breakfast"
-                    ? "ఉదయం"
-                    : meal === "lunch"
-                    ? "మధ్యాహ్నం"
-                    : meal === "evening_snack"
-                    ? "స్నాక్"
-                    : "రాత్రి"}
-                </button>
-              ))}
+              <span className="text-xs font-bold text-slate-500">
+                {locale === "te" ? "భోజనం:" : "Meal:"}
+              </span>
+              <select
+                value={selectedMeal}
+                onChange={(e) => setSelectedMeal(e.target.value as MealType)}
+                className="text-xs font-bold rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-slate-800 dark:text-slate-100"
+              >
+                <option value="breakfast">{locale === "te" ? "అల్పాహారం (Breakfast)" : "Breakfast"}</option>
+                <option value="lunch">{locale === "te" ? "మధ్యాహ్న భోజనం (Lunch)" : "Lunch"}</option>
+                <option value="evening_snack">{locale === "te" ? "సాయంత్రం స్నాక్ (Snack)" : "Snack"}</option>
+                <option value="dinner">{locale === "te" ? "రాత్రి భోజనం (Dinner)" : "Dinner"}</option>
+              </select>
             </div>
           </div>
 
-          {/* Kinetic Macro Counters */}
-          <div className="grid grid-cols-4 gap-2 text-center text-xs">
-            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/50 shadow-xs">
-              <span className="text-[10px] text-emerald-600 font-bold block">Calories</span>
-              <span className="text-base font-black text-slate-900 dark:text-white">
+          {/* Real-time calculated nutrient breakdown */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <TiltCard maxTilt={6} className="p-3 bg-white/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-center shadow-xs">
+              <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                {locale === "te" ? "క్యాలరీలు" : "Calories"}
+              </span>
+              <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5 flex items-center justify-center gap-1">
                 <KineticCounter value={Math.round(detectedMatch.calories * multiplier)} />
-              </span>
-              <span className="text-[9px] text-slate-400 block">kcal</span>
-            </div>
+                <span className="text-xs font-semibold text-slate-400">kcal</span>
+              </div>
+            </TiltCard>
 
-            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-teal-100 dark:border-teal-900/50 shadow-xs">
-              <span className="text-[10px] text-teal-600 font-bold block">Protein</span>
-              <span className="text-base font-black text-teal-700 dark:text-teal-300">
-                <KineticCounter value={Math.round(detectedMatch.proteinG * multiplier * 10) / 10} />
+            <TiltCard maxTilt={6} className="p-3 bg-white/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-center shadow-xs">
+              <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 block">
+                {locale === "te" ? "ప్రోటీన్" : "Protein"}
               </span>
-              <span className="text-[9px] text-slate-400 block">grams</span>
-            </div>
+              <div className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center justify-center gap-1">
+                <KineticCounter value={Math.round(detectedMatch.proteinG * multiplier * 10) / 10} decimals={1} />
+                <span className="text-xs font-semibold text-emerald-500">g</span>
+              </div>
+            </TiltCard>
 
-            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-amber-100 dark:border-amber-900/50 shadow-xs">
-              <span className="text-[10px] text-amber-600 font-bold block">Carbs</span>
-              <span className="text-base font-black text-amber-700 dark:text-amber-300">
-                <KineticCounter value={Math.round(detectedMatch.carbsG * multiplier * 10) / 10} />
+            <TiltCard maxTilt={6} className="p-3 bg-white/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-center shadow-xs">
+              <span className="text-[10px] uppercase font-bold text-cyan-600 block">
+                {locale === "te" ? "కార్బోహైడ్రేట్లు" : "Carbohydrates"}
               </span>
-              <span className="text-[9px] text-slate-400 block">grams</span>
-            </div>
+              <div className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5 flex items-center justify-center gap-1">
+                <KineticCounter value={Math.round(detectedMatch.carbsG * multiplier * 10) / 10} decimals={1} />
+                <span className="text-xs font-semibold text-slate-400">g</span>
+              </div>
+            </TiltCard>
 
-            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-rose-100 dark:border-rose-900/50 shadow-xs">
-              <span className="text-[10px] text-rose-600 font-bold block">Est. Cost</span>
-              <span className="text-base font-black text-slate-900 dark:text-white">
-                ₹<KineticCounter value={Math.round(detectedMatch.costInr * multiplier)} />
+            <TiltCard maxTilt={6} className="p-3 bg-white/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-center shadow-xs">
+              <span className="text-[10px] uppercase font-bold text-amber-600 block">
+                {locale === "te" ? "కొవ్వులు" : "Fats"}
               </span>
-              <span className="text-[9px] text-slate-400 block">home meal</span>
-            </div>
+              <div className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5 flex items-center justify-center gap-1">
+                <KineticCounter value={Math.round(detectedMatch.fatG * multiplier * 10) / 10} decimals={1} />
+                <span className="text-xs font-semibold text-slate-400">g</span>
+              </div>
+            </TiltCard>
           </div>
 
-          {/* Add to Daily Log CTA */}
-          <div className="pt-2 flex items-center justify-end">
-            <button
-              type="button"
-              onClick={handleAddLog}
-              disabled={isSubmitting}
-              className="w-full sm:w-auto min-h-[46px] px-6 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
-            >
-              <Plus className="h-4 w-4" />
-              <span>
-                {locale === "te"
-                  ? "ఈ ఆహారాన్ని డైలీ లాగ్‌లో చేర్చండి"
-                  : "Add this Item to Today's Food Log"}
-              </span>
-            </button>
-          </div>
+          {/* Add to Daily Log Action Button */}
+          <Button
+            type="button"
+            onClick={handleAddLog}
+            isLoading={isSubmitting}
+            className="w-full min-h-[46px] rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>
+              {locale === "te"
+                ? `ఈ భోజనాన్ని డైలీ లాగ్‌లో చేర్చండి (+${Math.round(detectedMatch.calories * multiplier)} kcal)`
+                : `Add to Daily Log (+${Math.round(detectedMatch.calories * multiplier)} kcal)`}
+            </span>
+          </Button>
         </div>
       )}
 
-      {/* Success Notification Feedback */}
+      {/* Success Notification */}
       {feedbackSuccess && (
-        <div className="mt-4 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+        <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
           <span>{feedbackSuccess}</span>
         </div>
       )}
-    </TiltCard>
+    </Card>
   );
 }
-

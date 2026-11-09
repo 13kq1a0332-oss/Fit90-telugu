@@ -36,6 +36,9 @@ import {
   Scale,
   Ruler,
   AlertTriangle,
+  Zap,
+  CheckCircle2,
+  HelpCircle,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -44,6 +47,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfileData>(DEFAULT_NEW_USER_PROFILE);
   const [goal, setGoal] = useState<UserGoalData>(DEFAULT_GOAL_DATA);
   const [isSaved, setIsSaved] = useState(false);
+  const [recalcNotice, setRecalcNotice] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,20 +60,62 @@ export default function ProfilePage() {
   }, []);
 
   const bmiResult = useMemo(
-    () => calculateBMI(profile.currentWeightKg, profile.heightCm),
+    () => calculateBMI(profile.currentWeightKg || 70, profile.heightCm || 170),
     [profile.currentWeightKg, profile.heightCm]
   );
 
   const riskMarkers = useMemo(
-    () => checkHealthRiskMarkers(profile.gender, profile.waistCm, profile.snoringReported),
+    () => checkHealthRiskMarkers(profile.gender, profile.waistCm || 85, profile.snoringReported),
     [profile.gender, profile.waistCm, profile.snoringReported]
   );
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     await saveUserProfileAndGoal(profile, goal);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  /**
+   * Auto-calculates 90-day targets dynamically from entered biometrics
+   */
+  const handleAutoRecalculateFromBiometrics = () => {
+    const age = profile.age > 0 ? profile.age : 30;
+    const height = profile.heightCm > 0 ? profile.heightCm : 170;
+    const weight = profile.currentWeightKg > 0 ? profile.currentWeightKg : 75;
+
+    const calcs = calculateCalorieTarget(
+      profile.gender,
+      weight,
+      height,
+      age,
+      profile.activityLevel || "sedentary"
+    );
+
+    // Safe 90-day sustainable loss: ~5 to 8 kg based on current weight
+    const safeTargetWeight = Math.max(
+      Math.round((weight - (weight > 95 ? 8 : weight > 80 ? 6 : 4)) * 10) / 10,
+      45
+    );
+
+    const updatedGoal: UserGoalData = {
+      ...goal,
+      targetWeightKg: safeTargetWeight,
+      calorieTargetMin: calcs.calorieTargetMin,
+      calorieTargetMax: calcs.calorieTargetMax,
+      proteinTargetMinG: calcs.proteinTargetMinG,
+      proteinTargetMaxG: calcs.proteinTargetMaxG,
+      dailyWaterTargetMl: calcs.dailyWaterTargetMl,
+      dailyStepTarget: calcs.dailyStepTarget,
+    };
+
+    setGoal(updatedGoal);
+    setRecalcNotice(
+      locale === "te"
+        ? `⚡ మీ ఎత్తు (${height}cm), బరువు (${weight}kg) ఆధారంగా క్యాలరీలు (${calcs.calorieTargetMin}-${calcs.calorieTargetMax} kcal) మరియు ప్రోటీన్ (${calcs.proteinTargetMinG}-${calcs.proteinTargetMaxG}g) స్వయంచాలకంగా లెక్కించబడ్డాయి!`
+        : `⚡ Targets recalculated based on your biometrics: ${calcs.calorieTargetMin}-${calcs.calorieTargetMax} kcal & ${calcs.proteinTargetMinG}-${calcs.proteinTargetMaxG}g protein!`
+    );
+    setTimeout(() => setRecalcNotice(null), 5000);
   };
 
   const handleLoadQaTestFixture = async () => {
@@ -138,23 +184,8 @@ export default function ProfilePage() {
     );
   };
 
-  const handleDeleteAccount = () => {
-    const confirmed = window.confirm(
-      locale === "te"
-        ? "మీ ఖాతాను మరియు అన్ని రికార్డులను శాశ్వతంగా తొలగించాలనుకుంటున్నారా? ఈ చర్యను రద్దు చేయలేము."
-        : "Are you sure you want to permanently delete your account and all health records? This action cannot be undone."
-    );
-    if (confirmed) {
-      alert(
-        locale === "te"
-          ? "ఖాతా తొలగింపు అభ్యర్థన నమోదు చేయబడింది."
-          : "Account deletion request processed."
-      );
-    }
-  };
-
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white">
@@ -180,14 +211,21 @@ export default function ProfilePage() {
         </Alert>
       )}
 
+      {recalcNotice && (
+        <Alert variant="default" className="border-emerald-300 bg-emerald-50 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 font-semibold text-xs">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2 shrink-0 inline" />
+          <span>{recalcNotice}</span>
+        </Alert>
+      )}
+
       {exportNotice && (
         <Alert variant="default" className="border-emerald-200 bg-emerald-50 text-emerald-950">
           <span>{exportNotice}</span>
         </Alert>
       )}
 
-      {/* Basic Biometrics & Identity Form */}
-      <Card>
+      {/* 1. Basic Biometrics & Identity Form */}
+      <Card className="rounded-3xl shadow-lg border border-slate-200/80 dark:border-slate-800">
         <CardHeader>
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-emerald-600" />
@@ -197,18 +235,19 @@ export default function ProfilePage() {
           </div>
           <CardDescription>
             {locale === "te"
-              ? "మీ ఎత్తు, బరువు, నడుము కొలతలు ఆధారంగా క్యాలరీ లక్ష్యాలు స్వయంచాలకంగా నవీకరించబడతాయి."
-              : "Your biometrics directly dictate your daily energy and macro equations."}
+              ? "మీ అసలు ఎత్తు, బరువు, వయస్సు వివరాలను నమోదు చేయండి. ఇవి మీ క్యాలరీ మరియు ప్రోటీన్ సమీకరణాలను నిర్ణయిస్తాయి."
+              : "Enter your real measurements manually. These directly dictate your daily energy and macro equations."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="profileName">{t.auth.fullNameLabel}</Label>
                 <Input
                   id="profileName"
                   value={profile.fullName}
+                  placeholder="మీ పూర్తి పేరు నమోదు చేయండి"
                   onChange={(e) =>
                     setProfile({ ...profile, fullName: e.target.value })
                   }
@@ -220,7 +259,7 @@ export default function ProfilePage() {
                   id="profileEmail"
                   value={profile.email}
                   disabled
-                  className="bg-slate-50 cursor-not-allowed"
+                  className="bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed text-slate-500"
                 />
               </div>
             </div>
@@ -231,9 +270,10 @@ export default function ProfilePage() {
                 <Input
                   id="profileAge"
                   type="number"
-                  value={profile.age}
+                  placeholder="e.g. 28"
+                  value={profile.age === 0 ? "" : profile.age}
                   onChange={(e) =>
-                    setProfile({ ...profile, age: Number(e.target.value) })
+                    setProfile({ ...profile, age: e.target.value === "" ? 0 : Number(e.target.value) })
                   }
                 />
               </div>
@@ -264,7 +304,7 @@ export default function ProfilePage() {
                     setProfile({ ...profile, preferredLocale: l });
                   }}
                 >
-                  <option value="te">తెలుగు</option>
+                  <option value="te">తెలుగు (Telugu)</option>
                   <option value="en">English</option>
                 </Select>
               </div>
@@ -272,42 +312,45 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label htmlFor="profileHeight">{t.onboarding.heightLabel}</Label>
+                <Label htmlFor="profileHeight">{t.onboarding.heightLabel} (cm)</Label>
                 <Input
                   id="profileHeight"
                   type="number"
-                  value={profile.heightCm}
+                  placeholder="e.g. 170"
+                  value={profile.heightCm === 0 ? "" : profile.heightCm}
                   onChange={(e) =>
-                    setProfile({ ...profile, heightCm: Number(e.target.value) })
+                    setProfile({ ...profile, heightCm: e.target.value === "" ? 0 : Number(e.target.value) })
                   }
                 />
               </div>
 
               <div>
-                <Label htmlFor="profileWeight">{t.onboarding.weightLabel}</Label>
+                <Label htmlFor="profileWeight">{t.onboarding.weightLabel} (kg)</Label>
                 <Input
                   id="profileWeight"
                   type="number"
                   step="0.5"
-                  value={profile.currentWeightKg}
+                  placeholder="e.g. 75"
+                  value={profile.currentWeightKg === 0 ? "" : profile.currentWeightKg}
                   onChange={(e) =>
                     setProfile({
                       ...profile,
-                      currentWeightKg: Number(e.target.value),
+                      currentWeightKg: e.target.value === "" ? 0 : Number(e.target.value),
                     })
                   }
                 />
               </div>
 
               <div>
-                <Label htmlFor="profileWaist">{t.onboarding.waistLabel}</Label>
+                <Label htmlFor="profileWaist">{t.onboarding.waistLabel} (cm)</Label>
                 <Input
                   id="profileWaist"
                   type="number"
                   step="0.5"
-                  value={profile.waistCm}
+                  placeholder="e.g. 88"
+                  value={profile.waistCm === 0 ? "" : profile.waistCm}
                   onChange={(e) =>
-                    setProfile({ ...profile, waistCm: Number(e.target.value) })
+                    setProfile({ ...profile, waistCm: e.target.value === "" ? 0 : Number(e.target.value) })
                   }
                 />
               </div>
@@ -339,39 +382,78 @@ export default function ProfilePage() {
               </Alert>
             )}
 
-            <Button type="submit" variant="primary">
-              {t.common.save}
-            </Button>
+            <div className="flex items-center justify-between pt-2">
+              <Button type="submit" variant="primary" className="font-bold">
+                {t.common.save}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAutoRecalculateFromBiometrics}
+                className="text-xs font-bold text-emerald-700 hover:bg-emerald-50 border-emerald-300 flex items-center gap-1.5"
+              >
+                <Zap className="h-3.5 w-3.5 text-emerald-600" />
+                <span>{locale === "te" ? "నా కొలతలతో టార్గెట్స్ లెక్కించండి" : "Sync Targets from Biometrics"}</span>
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* 90-Day Configurable Targets */}
-      <Card>
+      {/* 2. 90-Day Configurable Targets */}
+      <Card className="rounded-3xl shadow-lg border border-slate-200/80 dark:border-slate-800">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-emerald-600" />
               <CardTitle className="text-lg">
                 {t.profile.goalsTitle}
               </CardTitle>
             </div>
-            <Link href="/onboarding">
-              <Button size="sm" variant="outline" className="h-8 text-xs font-semibold">
-                {t.profile.recalculateButton}
-              </Button>
-            </Link>
+
+            {/* 1-Click Auto Recalculate Button */}
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAutoRecalculateFromBiometrics}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              <span>{locale === "te" ? "⚡ ఆటోమేటిక్ లెక్కింపు (BMR సూత్రం)" : "⚡ Recalculate from Biometrics"}</span>
+            </Button>
           </div>
+
           <CardDescription>
             {locale === "te"
-              ? "మీ రోజువారీ క్యాలరీ, ప్రోటీన్ మరియు 90 రోజుల లక్ష్య బరువు"
-              : "Adjust your 90-day weight goal and daily nutritional targets"}
+              ? "ఈ ఫీచర్ మీ 90 రోజుల పరివర్తన కోసం సురక్షితమైన రోజువారీ క్యాలరీ మరియు ప్రోటీన్ లక్ష్యాలను నిర్దేశిస్తుంది."
+              : "Adjust your 90-day weight goal and daily nutritional targets based on science or custom recommendations."}
           </CardDescription>
         </CardHeader>
+
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          {/* Feature Explanation Banner */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-slate-50 dark:from-emerald-950/40 dark:to-slate-900 border border-emerald-200 dark:border-emerald-800 text-xs text-slate-700 dark:text-slate-300 space-y-1.5">
+            <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              <Info className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>
+                {locale === "te" ? "ఈ ఫీచర్ ఎలా ఉపయోగపడుతుంది? (How this works):" : "How does this feature work?"}
+              </span>
+            </div>
+            <p className="leading-relaxed">
+              {locale === "te"
+                ? "1️⃣ ఆటోమేటిక్ లెక్కింపు: పైన మీరు ఇచ్చిన ఎత్తు, బరువు, వయస్సు ఆధారంగా '⚡ ఆటోమేటిక్ లెక్కింపు' క్లిక్ చేస్తే ICMR-NIN & Mifflin-St Jeor సూత్రాల ప్రకారం క్యాలరీలు (500 kcal deficit) మరియు ప్రోటీన్ సెట్ అవుతాయి."
+                : "1️⃣ Auto-Population: Clicking '⚡ Recalculate' uses Mifflin-St Jeor + ICMR guidelines to compute safe daily calories and protein deficits for your exact biometrics."}
+            </p>
+            <p className="leading-relaxed">
+              {locale === "te"
+                ? "2️⃣ మాన్యువల్ మార్పులు: మీ డాక్టర్ లేదా న్యూట్రిషనిస్ట్ సూచించిన నిర్దిష్ట లక్ష్యాలకు అనుగుణంగా మీరు కింద ఉన్న ఏ బాక్స్‌నైనా స్వయంగా మార్చుకుని 'Save Changes' క్లిక్ చేయవచ్చు."
+                : "2️⃣ Manual Customization: Clients or nutritionists can directly edit any field below (e.g. custom protein target) and save changes."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="goalWeight">{t.onboarding.targetWeightLabel}</Label>
+              <Label htmlFor="goalWeight">{t.onboarding.targetWeightLabel} (kg)</Label>
               <Input
                 id="goalWeight"
                 type="number"
@@ -381,9 +463,12 @@ export default function ProfilePage() {
                   setGoal({ ...goal, targetWeightKg: Number(e.target.value) })
                 }
               />
+              <span className="text-[10px] text-slate-500">
+                {locale === "te" ? "90 రోజుల్లో సురక్షితంగా సాధించగల లక్ష్య బరువు" : "Safe 90-day weight target"}
+              </span>
             </div>
             <div>
-              <Label htmlFor="goalDate">Target Date</Label>
+              <Label htmlFor="goalDate">Target Date (90 Days)</Label>
               <Input
                 id="goalDate"
                 type="date"
@@ -392,6 +477,9 @@ export default function ProfilePage() {
                   setGoal({ ...goal, targetDate: e.target.value })
                 }
               />
+              <span className="text-[10px] text-slate-500">
+                {locale === "te" ? "90 రోజుల ముగింపు తేదీ" : "90-day milestone deadline"}
+              </span>
             </div>
           </div>
 
@@ -433,6 +521,7 @@ export default function ProfilePage() {
                   setGoal({ ...goal, proteinTargetMinG: Number(e.target.value) })
                 }
               />
+              <span className="text-[10px] text-slate-500">ICMR: 1.2g/kg</span>
             </div>
             <div>
               <Label htmlFor="goalProteinMax">Protein Target Max (g)</Label>
@@ -444,6 +533,7 @@ export default function ProfilePage() {
                   setGoal({ ...goal, proteinTargetMaxG: Number(e.target.value) })
                 }
               />
+              <span className="text-[10px] text-slate-500">1.6g/kg muscle retention</span>
             </div>
           </div>
 
@@ -455,14 +545,15 @@ export default function ProfilePage() {
               setIsSaved(true);
               setTimeout(() => setIsSaved(false), 3000);
             }}
+            className="w-full sm:w-auto font-bold px-6"
           >
             {t.common.save}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Privacy, Data Export & Deletion Compliance */}
-      <Card className="border-slate-200">
+      {/* 3. Privacy, Data Export & Deletion Compliance */}
+      <Card className="rounded-3xl shadow-lg border border-slate-200/80 dark:border-slate-800">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-emerald-600" />
@@ -479,13 +570,13 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80">
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {t.profile.exportData}
               </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500">
                 {locale === "te"
-                  ? "మీ ప్రొఫైల్ మరియు అన్ని లాగ్‌ల JSON కాపీని డౌన్‌లోడ్ చేస్తుంది"
-                  : "Downloads a full JSON archive of all your tracking logs"}
+                  ? "మీ బయోమెట్రిక్స్, ఆహార లాగ్‌లు, మరియు లక్ష్యాల పూర్తి JSON ఆర్కైవ్"
+                  : "Complete JSON archive of biometrics, food logs, and 90-day target history"}
               </p>
             </div>
             <Button
@@ -493,33 +584,10 @@ export default function ProfilePage() {
               variant="outline"
               size="sm"
               onClick={handleExportData}
-              className="flex items-center gap-2 shrink-0"
+              className="shrink-0 text-xs font-semibold"
             >
-              <Download className="h-4 w-4" />
-              <span>{locale === "te" ? "డౌన్‌లోడ్" : "Export"}</span>
-            </Button>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/60">
-            <div>
-              <h4 className="text-sm font-semibold text-red-900 dark:text-red-200">
-                {t.profile.deleteAccount}
-              </h4>
-              <p className="text-xs text-red-700/80 dark:text-red-300 mt-0.5">
-                {locale === "te"
-                  ? "మీ ప్రొఫైల్ మరియు లాగ్ డేటా పూర్తిగా తొలగించబడుతుంది"
-                  : "Permanently erase your account and associated records"}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={handleDeleteAccount}
-              className="flex items-center gap-2 shrink-0"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>{locale === "te" ? "తొలగించండి" : "Delete"}</span>
+              <Download className="h-3.5 w-3.5 mr-1" />
+              {locale === "te" ? "డౌన్‌లోడ్ చేయండి" : "Export Data"}
             </Button>
           </div>
         </CardContent>
