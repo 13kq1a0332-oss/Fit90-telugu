@@ -67,6 +67,11 @@ export function SignupForm() {
       }
 
       const supabase = createClient();
+      const origin =
+        typeof window !== "undefined" && window.location.origin
+          ? window.location.origin
+          : "https://fit90-telugu.vercel.app";
+
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -75,7 +80,7 @@ export function SignupForm() {
             full_name: values.fullName,
             preferred_locale: values.preferredLocale,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${origin}/auth/callback`,
         },
       });
 
@@ -91,7 +96,9 @@ export function SignupForm() {
         router.refresh();
       } else {
         setSuccessMessage(
-          "Registration successful! Please check your email to confirm your account."
+          locale === "te"
+            ? "ఖాతా నమోదు పూర్తయింది! మీ ఇమెయిల్‌కు ధృవీకరణ లింక్ పంపబడింది. Supabase లో Confirm Email డిసేబుల్ చేసి ఉంటే నేరుగా లాగిన్ చేయవచ్చు."
+            : "Registration successful! If email confirmation is enabled, check your inbox. You can also sign in directly if auto-confirmation is enabled in Supabase."
         );
         setIsLoading(false);
       }

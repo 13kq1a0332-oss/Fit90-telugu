@@ -6,6 +6,7 @@ import { DailyFoodLog } from "@/components/diet/daily-food-log";
 import { MealPlanView } from "@/components/diet/meal-plan-view";
 import { FoodSearchCatalog } from "@/components/diet/food-search-catalog";
 import { GroceryListView } from "@/components/diet/grocery-list-view";
+import { TeluguVoiceLogger } from "@/components/diet/telugu-voice-logger";
 import { MealType } from "@/lib/diet-store";
 import {
   CalendarDays,
@@ -13,9 +14,10 @@ import {
   Search,
   ShoppingCart,
   UtensilsCrossed,
+  Mic,
 } from "lucide-react";
 
-type DietTab = "log" | "plan" | "catalog" | "grocery";
+type DietTab = "log" | "voice" | "plan" | "catalog" | "grocery";
 
 export default function DietPage() {
   const { locale, t } = useI18n();
@@ -43,6 +45,12 @@ export default function DietPage() {
       labelEn: t.diet.tabDailyLog,
       labelTe: t.diet.tabDailyLog,
       icon: CalendarDays,
+    },
+    {
+      id: "voice",
+      labelEn: "Voice Logger",
+      labelTe: "🎙️ వాయిస్ లాగర్",
+      icon: Mic,
     },
     {
       id: "plan",
@@ -93,7 +101,7 @@ export default function DietPage() {
 
       {/* 21st.dev Segmented Glass Tab Controls */}
       <div className="glass-card p-1.5 rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -108,7 +116,7 @@ export default function DietPage() {
                 }`}
               >
                 <Icon className={`h-4 w-4 transition-transform ${isActive ? "text-white scale-110" : "text-slate-400"}`} />
-                <span className="truncate">{tab.labelTe}</span>
+                <span className="truncate">{locale === "te" ? tab.labelTe : tab.labelEn}</span>
               </button>
             );
           })}
@@ -122,6 +130,12 @@ export default function DietPage() {
             refreshTrigger={refreshTrigger}
             onOpenCatalogForMeal={handleOpenCatalogForMeal}
           />
+        )}
+
+        {activeTab === "voice" && (
+          <div className="space-y-4">
+            <TeluguVoiceLogger onEntryAdded={handleDataChanged} />
+          </div>
         )}
 
         {activeTab === "plan" && (

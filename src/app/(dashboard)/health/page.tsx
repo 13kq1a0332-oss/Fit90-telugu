@@ -6,6 +6,7 @@ import { BiometricsOverview } from "@/components/health/biometrics-overview";
 import { WeightWaistCharts } from "@/components/health/weight-waist-charts";
 import { LabRecordsView } from "@/components/health/lab-records-view";
 import { RemindersManager } from "@/components/health/reminders-manager";
+import { BiomarkerRiskCalculator } from "@/components/health/biomarker-risk-calculator";
 import {
   HeartPulse,
   Activity,
@@ -13,9 +14,10 @@ import {
   FileText,
   Bell,
   ShieldCheck,
+  Stethoscope,
 } from "lucide-react";
 
-type HealthTab = "overview" | "trends" | "labs" | "reminders";
+type HealthTab = "overview" | "biomarkers" | "trends" | "labs" | "reminders";
 
 export default function HealthPage() {
   const { locale, t } = useI18n();
@@ -30,6 +32,11 @@ export default function HealthPage() {
       id: "overview",
       label: t.health.tabOverview,
       icon: Activity,
+    },
+    {
+      id: "biomarkers",
+      label: locale === "te" ? "మెటబాలిక్ అనలైజర్" : "Biomarkers",
+      icon: Stethoscope,
     },
     {
       id: "trends",
@@ -77,7 +84,7 @@ export default function HealthPage() {
 
       {/* 21st.dev Navigation Tabs */}
       <div className="glass-card p-1.5 rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -103,6 +110,7 @@ export default function HealthPage() {
       {/* Tab Content Panes */}
       <div className="mt-4 transition-all duration-300">
         {activeTab === "overview" && <BiometricsOverview />}
+        {activeTab === "biomarkers" && <BiomarkerRiskCalculator />}
         {activeTab === "trends" && <WeightWaistCharts />}
         {activeTab === "labs" && <LabRecordsView />}
         {activeTab === "reminders" && <RemindersManager />}
