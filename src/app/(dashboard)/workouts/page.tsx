@@ -144,7 +144,7 @@ export default function WorkoutsPage() {
                 }`}
               >
                 <Icon className={`h-4 w-4 transition-transform ${isActive ? "text-white scale-110" : "text-slate-400"}`} />
-                <span className="truncate">{tab.labelTe}</span>
+                <span className="truncate">{locale === "te" ? tab.labelTe : tab.labelEn}</span>
               </button>
             );
           })}

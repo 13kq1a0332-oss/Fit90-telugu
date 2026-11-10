@@ -23,7 +23,7 @@ export default async function DashboardLayout({
 
       <SafetyBanner compact />
       <Navbar userEmail={user?.email || "user@example.com"} />
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6 overflow-x-hidden relative z-10">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 overflow-x-hidden relative z-10">
         {children}
       </main>
       <BottomNav />

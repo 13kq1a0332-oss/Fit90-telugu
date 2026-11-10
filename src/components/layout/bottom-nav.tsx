@@ -62,9 +62,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-slate-200/80 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl safe-area-bottom shadow-lg shadow-black/5"
+      className="fixed bottom-3 left-3 right-3 z-40 block md:hidden border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-xl shadow-black/10 max-w-lg mx-auto"
     >
-      <div className="grid h-16 grid-cols-6 items-center justify-around px-1 max-w-md mx-auto">
+      <div className="grid h-16 grid-cols-6 items-center justify-around px-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -73,15 +73,19 @@ export function BottomNav() {
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1 min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 ${
                 item.active
-                  ? "text-emerald-700 dark:text-emerald-400 font-bold"
+                  ? "text-emerald-700 dark:text-emerald-400 font-black"
                   : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
               {item.active && (
-                <span className="absolute -top-0.5 w-6 h-1 rounded-full bg-emerald-600 dark:bg-emerald-400 shadow-xs shadow-emerald-500" />
+                <span className="absolute -top-1 w-6 h-1 rounded-full bg-emerald-600 dark:bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
               )}
-              <Icon className={`h-5 w-5 transition-transform duration-200 ${item.active ? "stroke-[2.5] scale-110" : "stroke-[1.75]"}`} />
-              <span className="text-[10px] mt-0.5 truncate max-w-[64px] text-center">
+              <Icon
+                className={`h-5 w-5 transition-transform duration-200 ${
+                  item.active ? "stroke-[2.5] scale-110" : "stroke-[1.75]"
+                }`}
+              />
+              <span className="text-[10px] mt-0.5 truncate max-w-[56px] text-center font-medium">
                 {item.label}
               </span>
             </Link>

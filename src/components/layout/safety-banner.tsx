@@ -13,25 +13,27 @@ export function SafetyBanner({ compact = false }: { compact?: boolean }) {
   return (
     <aside
       aria-label="Medical disclaimer and health safety warning"
-      className="bg-amber-50/95 border-b border-amber-200/80 px-4 py-2.5 text-xs text-amber-950 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-200"
+      className="bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-teal-500/10 border-b border-amber-300/40 dark:border-amber-700/40 backdrop-blur-md px-4 py-2 text-xs text-amber-950 dark:text-amber-200"
     >
-      <div className="max-w-4xl mx-auto flex items-start gap-2.5">
-        <ShieldAlert className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
-        <div className="flex-1 space-y-0.5">
-          <p className="font-semibold leading-relaxed">
-            {t.app.disclaimerShort}
-          </p>
-          {!compact && (
-            <p className="text-amber-800 dark:text-amber-300/90 leading-relaxed text-[11px]">
-              {t.app.disclaimerLong}
-            </p>
-          )}
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 px-2 sm:px-4">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400">
+            <ShieldAlert className="h-3.5 w-3.5" />
+          </span>
+          <div className="flex-1 min-w-0 truncate">
+            <span className="font-bold">{t.app.disclaimerShort}</span>
+            {!compact && (
+              <span className="hidden sm:inline text-amber-800/90 dark:text-amber-300/80 text-[11px] ml-2">
+                — {t.app.disclaimerLong}
+              </span>
+            )}
+          </div>
         </div>
         {compact && (
           <button
             onClick={() => setIsDismissed(true)}
             aria-label="Dismiss banner"
-            className="text-amber-700 hover:text-amber-900 p-0.5"
+            className="h-6 w-6 rounded-full flex items-center justify-center text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
           >
             <X className="h-3.5 w-3.5" />
           </button>
