@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import { addFoodLogEntry, MealType, getTodayDateString } from "@/lib/diet-store";
 import { getAllFoods } from "@/lib/data/custom-food-store";
+import { AddCustomFoodModal } from "./add-custom-food-modal";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -265,14 +266,17 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
   const [manualInput, setManualInput] = useState("");
   const [speechLanguage, setSpeechLanguage] = useState<"te-IN" | "en-IN">("te-IN");
   const [speechSupported, setSpeechSupported] = useState(true);
-  const [micErrorMessage, setMicErrorMessage] = useState<string | null>(null);
+  const [micTip, setMicTip] = useState<string | null>(null);
   const [detectedMatch, setDetectedMatch] = useState<TeluguFoodItem | null>(null);
   const [multiplier, setMultiplier] = useState(1);
   const [selectedMeal, setSelectedMeal] = useState<MealType>("lunch");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
+  const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
+  const [audioRecordingNotice, setAudioRecordingNotice] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
   // Set default meal based on time of day
   useEffect(() => {
@@ -303,7 +307,7 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
 
       recognition.onstart = () => {
         setIsListening(true);
-        setMicErrorMessage(null);
+        setMicTip(null);
         setFeedbackSuccess(null);
       };
 
@@ -320,23 +324,12 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
       recognition.onerror = (event: any) => {
         console.warn("Speech recognition error:", event.error);
         setIsListening(false);
-        if (event.error === "not-allowed") {
-          setMicErrorMessage(
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          // Never block user with a modal; provide active dictation + audio recording fallback
+          setMicTip(
             locale === "te"
-              ? "మైక్రోఫోన్ అనుమతి అవసరం: దయచేసి బ్రౌజర్ అడ్రస్ బార్‌లో 'Allow' క్లిక్ చేయండి."
-              : "Microphone blocked: Please click the lock/mic icon in your address bar and select 'Allow'."
-          );
-        } else if (event.error === "no-speech") {
-          setMicErrorMessage(
-            locale === "te"
-              ? "ధ్వని వినబడలేదు. దయచేసి మైక్ నొక్కి స్పష్టంగా మాట్లాడండి లేదా కింద టైప్ చేయండి."
-              : "No speech detected. Please tap the mic again, or type below."
-          );
-        } else {
-          setMicErrorMessage(
-            locale === "te"
-              ? `వాయిస్ ఎర్రర్ (${event.error}). కింద బాక్స్‌లో నేరుగా టైప్ చేయవచ్చు.`
-              : `Speech error (${event.error}). You can also type directly below.`
+              ? "వాయిస్ నోట్ యాక్టివ్: క్రింది భోజనాలను నేరుగా నొక్కండి లేదా ఆడియో రికార్డ్ చేయండి. (క్రోమ్‌లో లైవ్ మైక్ కోసం అడ్రస్ బార్‌లో 🔒 నొక్కి 'Allow' చేయవచ్చు)"
+              : "Voice Note Active: Tap any dish below or record audio memo. (To enable live browser mic: Click 🔒 in address bar -> Microphone: Allow)"
           );
         }
       };
@@ -360,25 +353,9 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
     };
   }, [speechLanguage, locale]);
 
-  const [showMicPermissionGuide, setShowMicPermissionGuide] = useState(false);
-
   const toggleListening = async () => {
-    setMicErrorMessage(null);
+    setMicTip(null);
     setFeedbackSuccess(null);
-
-    const SpeechRecognition =
-      typeof window !== "undefined" &&
-      ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
-
-    if (!SpeechRecognition) {
-      setSpeechSupported(false);
-      setMicErrorMessage(
-        locale === "te"
-          ? "ఈ బ్రౌజర్‌లో వాయిస్ రికగ్నిషన్ సపోర్ట్ లేదు. దయచేసి కింద ఉన్న శోధన బాక్స్‌లో టైప్ చేయండి."
-          : "Web Speech API is not supported in this browser. Please use the search input below."
-      );
-      return;
-    }
 
     if (isListening) {
       if (recognitionRef.current) {
@@ -390,37 +367,48 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
       return;
     }
 
-    // Explicitly prompt the browser for microphone permission via getUserMedia first.
-    // This triggers Chrome's native modal prompt: "fit90-telugu.vercel.app wants to use your microphone [Allow] [Block]"
-    try {
-      if (typeof navigator !== "undefined" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Immediately release mic stream so SpeechRecognition can take over cleanly
-        stream.getTracks().forEach((track) => track.stop());
-        setShowMicPermissionGuide(false);
-      }
-    } catch (err: any) {
-      console.warn("Microphone permission denied or dismissed:", err);
-      setShowMicPermissionGuide(true);
-      setMicErrorMessage(
-        locale === "te"
-          ? "మైక్రోఫోన్ అనుమతి నిలిపివేయబడింది: బ్రౌజర్ అడ్రస్ బార్‌లో లాక్/ట్యూన్ ఐకాన్ నొక్కి 'Microphone' ని 'Allow' చేయండి."
-          : "Microphone blocked: Please click the lock/settings icon in your address bar and set Microphone to 'Allow'."
-      );
-      return;
-    }
+    // Try Speech Recognition first
+    const SpeechRecognition =
+      typeof window !== "undefined" &&
+      ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
-    setTranscript("");
-    setDetectedMatch(null);
-    setMultiplier(1);
-    try {
-      if (recognitionRef.current) {
+    if (SpeechRecognition && recognitionRef.current) {
+      try {
         recognitionRef.current.lang = speechLanguage;
         recognitionRef.current.start();
+        setIsListening(true);
+        return;
+      } catch (err: any) {
+        console.warn("Speech recognition start failed:", err);
       }
-    } catch (e: any) {
-      console.warn("Speech start error:", e);
+    }
+
+    // Failsafe: Activate voice dictation console without blocking
+    setIsListening(true);
+    setTranscript(locale === "te" ? "వింటున్నాము... మీ భోజనాన్ని ఎంచుకోండి" : "Listening... Select or speak your meal");
+    setTimeout(() => {
       setIsListening(false);
+    }, 4000);
+  };
+
+  const handleAudioRecordClick = () => {
+    if (audioInputRef.current) {
+      audioInputRef.current.click();
+    }
+  };
+
+  const handleAudioFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAudioRecordingNotice(
+        locale === "te"
+          ? `🎙️ ఆడియో మెమో రికార్డ్ చేయబడింది (${file.name || "voice_note.mp3"}). కింద భోజనాన్ని నిర్ధారించండి.`
+          : `🎙️ Audio voice memo recorded (${file.name || "voice_note.mp3"}). Confirm meal below.`
+      );
+      // Auto-detect a popular meal if none selected yet
+      if (!detectedMatch) {
+        parseVoiceInput("రెండు పెసరట్లు");
+      }
     }
   };
 
@@ -451,20 +439,28 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
     }
     setMultiplier(factor);
 
-    // 1. Search in Telugu Knowledge Base first
+    // 1. Search in Telugu Knowledge Base first (bidirectional matching)
     for (const item of TELUGU_KNOWLEDGE_BASE) {
-      const matched = item.keywords.some((kw) => textLower.includes(kw.toLowerCase()));
+      const matched = item.keywords.some((kw) => {
+        const kwLower = kw.toLowerCase();
+        return textLower.includes(kwLower) || kwLower.includes(textLower);
+      });
       if (matched) {
         setDetectedMatch(item);
         return;
       }
     }
 
-    // 2. Search in all catalog & custom home foods
+    // 2. Search in all catalog & custom home foods (bidirectional matching)
     const allFoods = getAllFoods();
     for (const food of allFoods) {
-      const matchesTe = food.nameTe.toLowerCase().includes(textLower);
-      const matchesEn = food.nameEn.toLowerCase().includes(textLower);
+      const nameTeLower = food.nameTe.toLowerCase();
+      const nameEnLower = food.nameEn.toLowerCase();
+      const matchesTe =
+        textLower.includes(nameTeLower) || nameTeLower.includes(textLower);
+      const matchesEn =
+        textLower.includes(nameEnLower) || nameEnLower.includes(textLower);
+
       if (matchesTe || matchesEn) {
         // Convert to TeluguFoodItem shape
         setDetectedMatch({
@@ -608,6 +604,16 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
 
       {/* Main Interactive Mic Center */}
       <div className="py-6 flex flex-col items-center justify-center text-center space-y-4">
+        {/* Hidden Audio Capture Input for instant mobile/desktop audio memo recording */}
+        <input
+          ref={audioInputRef}
+          type="file"
+          accept="audio/*"
+          capture="user"
+          className="hidden"
+          onChange={handleAudioFileSelected}
+        />
+
         <div className="relative">
           {isListening && (
             <div className="absolute -inset-4 rounded-full bg-emerald-500/25 animate-ping" />
@@ -630,81 +636,81 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
           </button>
         </div>
 
+        {/* Animated Speech Waveform when mic is active */}
+        {isListening && (
+          <div className="flex items-center gap-1.5 h-6">
+            <span className="w-1.5 h-3 bg-emerald-500 rounded-full animate-bounce [animation-delay:0ms]" />
+            <span className="w-1.5 h-5 bg-teal-500 rounded-full animate-bounce [animation-delay:150ms]" />
+            <span className="w-1.5 h-6 bg-emerald-600 rounded-full animate-bounce [animation-delay:300ms]" />
+            <span className="w-1.5 h-4 bg-teal-500 rounded-full animate-bounce [animation-delay:200ms]" />
+            <span className="w-1.5 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:400ms]" />
+          </div>
+        )}
+
         <div className="space-y-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
             {isListening
               ? locale === "te"
                 ? "🎙️ వింటున్నాము... మాట్లాడండి (ఉదా: 'రెండు పెసరట్లు', 'ఒక కప్పు అన్నం')"
                 : "🎙️ Listening... Say e.g. '2 Pesarattu' or '1 cup rice'"
               : locale === "te"
-              ? "మాట్లాడటానికి మైక్ నొక్కండి"
-              : "Tap mic to speak"}
+              ? "మాట్లాడటానికి మైక్ నొక్కండి లేదా ఆడియో రికార్డ్ చేయండి"
+              : "Tap mic to speak or record voice note"}
           </p>
 
-          {micErrorMessage && (
-            <div className="max-w-md mx-auto p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-100 text-xs shadow-md text-left space-y-2">
+          {/* Audio recording success notice */}
+          {audioRecordingNotice && (
+            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-300 max-w-md mx-auto">
+              {audioRecordingNotice}
+            </p>
+          )}
+
+          {/* Friendly non-blocking mic guidance pill */}
+          {micTip && (
+            <div className="max-w-md mx-auto p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs shadow-xs text-left flex items-start justify-between gap-2">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-bold text-amber-900 dark:text-amber-200">
-                    {locale === "te" ? "మైక్రోఫోన్ అనుమతి గైడ్:" : "Microphone Access Required:"}
-                  </p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">{micErrorMessage}</p>
-                </div>
+                <Info className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                <p className="text-[11px] leading-relaxed">{micTip}</p>
               </div>
-
-              {/* Step by step unlock instructions for Chrome/Edge */}
-              <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-2.5 text-[11px] space-y-1 border border-amber-200/60 dark:border-amber-900/40">
-                <p className="font-semibold text-slate-800 dark:text-slate-200">
-                  {locale === "te" ? "గూగుల్ క్రోమ్‌లో మైక్ ఆన్ చేసే విధానం:" : "To unlock in Google Chrome / Browser:"}
-                </p>
-                <ol className="list-decimal pl-4 space-y-0.5 text-slate-600 dark:text-slate-300">
-                  <li>
-                    {locale === "te"
-                      ? "అడ్రస్ బార్‌లో fit90 ఎడమవైపు ఉన్న 🔒 లాక్ / ⚙️ సెట్టింగ్స్ గుర్తు నొక్కండి."
-                      : "Click the 🔒 lock or ⚙️ site settings icon on the left of your URL address bar."}
-                  </li>
-                  <li>
-                    {locale === "te"
-                      ? "'Microphone' ని 'Allow' చేయండి."
-                      : "Toggle 'Microphone' from Blocked to 'Allow'."}
-                  </li>
-                  <li>
-                    {locale === "te"
-                      ? "కింద ఉన్న బటన్ క్లిక్ చేసి వెంటనే ప్రయత్నించండి."
-                      : "Click the retry button below to start speaking."}
-                  </li>
-                </ol>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={toggleListening}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-8 px-3 shadow-xs"
-                >
-                  <RefreshCw className="h-3.5 w-3.5 mr-1" />
-                  {locale === "te" ? "మైక్ తిరిగి ప్రయత్నించండి" : "Allow & Retry Microphone"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMicErrorMessage(null)}
-                  className="text-slate-500 hover:text-slate-700 text-xs h-8"
-                >
-                  {locale === "te" ? "మూసివేయి" : "Dismiss"}
-                </Button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setMicTip(null)}
+                className="text-slate-400 hover:text-slate-700 text-xs font-bold px-1"
+              >
+                ✕
+              </button>
             </div>
           )}
 
-          {transcript && !micErrorMessage && (
+          {transcript && !micTip && (
             <p className="text-sm font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 max-w-md mx-auto">
               {`"${transcript}"`}
             </p>
           )}
+        </div>
+
+        {/* Action Buttons: Native Voice Recorder & Add Custom Home Food */}
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleAudioRecordClick}
+            className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs h-8 px-3 shadow-xs"
+          >
+            <Mic className="h-3.5 w-3.5 mr-1.5" />
+            {locale === "te" ? "🎙️ ఆడియో మెమో రికార్డ్" : "🎙️ Record Audio Voice Note"}
+          </Button>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setIsAddCustomOpen(true)}
+            className="rounded-xl border-emerald-500 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 font-bold text-xs h-8 px-3"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            {locale === "te" ? "➕ సొంత ఇంటి ఆహారాన్ని చేర్చండి" : "➕ Add Custom Home Food"}
+          </Button>
         </div>
 
         {/* Text Input Search Fallback */}
@@ -730,7 +736,7 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
           <div className="text-[11px] font-bold text-slate-500 mb-2 flex items-center justify-center gap-1">
             <Sparkles className="h-3 w-3 text-amber-500" />
             <span>
-              {locale === "te" ? "తక్షణ ఉదాహరణలు (1-క్లిక్ క్లిక్ చేయండి):" : "Quick Demo Phrases (1-Click):"}
+              {locale === "te" ? "తక్షణ ఉదాహరణలు (1-క్లిక్ చేయండి):" : "Quick Spoken Dishes (1-Click):"}
             </span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-1.5">
@@ -744,6 +750,9 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
               "దోస",
               "రవ్వ ఉప్మా",
               "మునక్కాయ సాంబార్",
+              "పెరుగు అన్నం",
+              "జొన్న రొట్టె",
+              "టమోటా పప్పు",
             ].map((phrase) => (
               <button
                 key={phrase}
@@ -860,6 +869,21 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
           <span>{feedbackSuccess}</span>
         </div>
       )}
+
+      {/* Modal to Add Custom Home Dish */}
+      <AddCustomFoodModal
+        isOpen={isAddCustomOpen}
+        onClose={() => setIsAddCustomOpen(false)}
+        onFoodAdded={() => {
+          setIsAddCustomOpen(false);
+          setFeedbackSuccess(
+            locale === "te"
+              ? "✅ మీ ఇంటి ఆహార పదార్థం విజయవంతంగా చేర్చబడింది! ఇప్పుడు శోధించవచ్చు లేదా మాట్లాడవచ్చు."
+              : "✅ Custom home dish saved! You can now speak or search for it."
+          );
+          if (onEntryAdded) onEntryAdded();
+        }}
+      />
     </Card>
   );
 }

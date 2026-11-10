@@ -175,16 +175,44 @@ export function MobileOtpAuth({ mode, onSwitchToEmail }: MobileOtpAuthProps) {
         document.cookie = "fit90_client_demo=true; path=/; max-age=604800; SameSite=Lax";
       }
 
+      let resolvedName = fullName.trim();
+      if (!resolvedName && typeof window !== "undefined") {
+        try {
+          const prev = localStorage.getItem("fit90_user_profile");
+          if (prev) {
+            const parsed = JSON.parse(prev);
+            if (parsed.fullName && !parsed.fullName.includes("Ramesh")) {
+              resolvedName = parsed.fullName;
+            }
+          }
+        } catch {}
+      }
+      if (!resolvedName) {
+        resolvedName = locale === "te" ? "ఫిట్90 సభ్యులు" : "Fit90 Member";
+      }
+
       const clientUser = {
         id: `phone_${phoneNumber.replace(/\D/g, "")}`,
         phone: phoneNumber,
-        fullName: fullName || "Fit90 Member",
+        fullName: resolvedName,
         role: "authenticated",
         authMethod: "mobile_otp",
       };
 
       if (typeof window !== "undefined") {
         localStorage.setItem("fit90_current_user", JSON.stringify(clientUser));
+        try {
+          const profileStr = localStorage.getItem("fit90_user_profile");
+          const existingProfile = profileStr ? JSON.parse(profileStr) : {};
+          localStorage.setItem(
+            "fit90_user_profile",
+            JSON.stringify({
+              ...existingProfile,
+              fullName: resolvedName,
+              email: phoneNumber,
+            })
+          );
+        } catch {}
       }
 
       router.push("/dashboard");

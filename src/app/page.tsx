@@ -32,6 +32,17 @@ export default function HomePage() {
   const { t, locale } = useI18n();
   const [heroTab, setHeroTab] = useState<"diet" | "workout" | "vitals" | "ai">("diet");
 
+  // If OAuth callback lands on root '/' with '?code=...', forward to '/auth/callback'
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      if (code) {
+        window.location.href = `/auth/callback?code=${encodeURIComponent(code)}`;
+      }
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-ambient-mesh dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-x-hidden selection:bg-emerald-500/20">
       <SafetyBanner />

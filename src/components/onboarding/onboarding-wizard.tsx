@@ -11,6 +11,7 @@ import {
   type ActivityLevel,
 } from "@/lib/health-calculations";
 import {
+  getUserProfileAndGoal,
   saveUserProfileAndGoal,
   UserProfileData,
   UserGoalData,
@@ -45,17 +46,42 @@ export function OnboardingWizard() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Form states
-  const [age, setAge] = useState<number>(31);
+  const [fullName, setFullName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [age, setAge] = useState<number>(30);
   const [gender, setGender] = useState<Gender>("male");
-  const [heightCm, setHeightCm] = useState<number>(176);
-  const [currentWeightKg, setCurrentWeightKg] = useState<number>(118);
-  const [waistCm, setWaistCm] = useState<number>(150);
+  const [heightCm, setHeightCm] = useState<number>(172);
+  const [currentWeightKg, setCurrentWeightKg] = useState<number>(80);
+  const [waistCm, setWaistCm] = useState<number>(90);
 
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>("sedentary");
   const [dietaryPreference, setDietaryPreference] = useState<
     "veg" | "non_veg" | "egg_only" | "vegan" | "mixed"
   >("mixed");
-  const [snoringReported, setSnoringReported] = useState<boolean>(true);
+  const [snoringReported, setSnoringReported] = useState<boolean>(false);
+
+  // Load authenticated user identity on mount
+  React.useEffect(() => {
+    async function loadIdentity() {
+      try {
+        const { profile: existing } = await getUserProfileAndGoal();
+        if (existing) {
+          if (existing.fullName && !existing.fullName.includes("Ramesh")) {
+            setFullName(existing.fullName);
+          }
+          if (existing.email && !existing.email.includes("user@fit90.test")) {
+            setEmail(existing.email);
+          }
+          if (existing.age > 0) setAge(existing.age);
+          if (existing.heightCm > 0) setHeightCm(existing.heightCm);
+          if (existing.currentWeightKg > 0) setCurrentWeightKg(existing.currentWeightKg);
+          if (existing.waistCm > 0) setWaistCm(existing.waistCm);
+          if (existing.gender) setGender(existing.gender);
+        }
+      } catch {}
+    }
+    loadIdentity();
+  }, []);
 
   // Dynamic calculations
   const bmiResult = useMemo(
@@ -119,8 +145,8 @@ export function OnboardingWizard() {
     setIsSaving(true);
 
     const profileData: UserProfileData = {
-      email: "user@fit90.test",
-      fullName: locale === "te" ? "రమేష్ కుమార్" : "Ramesh Kumar",
+      email: email || "member@fit90.app",
+      fullName: fullName.trim() || (locale === "te" ? "ఫిట్90 సభ్యులు" : "Fit90 Member"),
       preferredLocale: locale,
       gender,
       age,
@@ -206,6 +232,19 @@ export function OnboardingWizard() {
             <CardDescription>{t.onboarding.step1Subtitle}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="onboardingFullName">
+                {t.auth.fullNameLabel}
+              </Label>
+              <Input
+                id="onboardingFullName"
+                placeholder={locale === "te" ? "మీ పూర్తి పేరు నమోదు చేయండి (ఉదా: శ్రీకాంత్)" : "Enter your full name (e.g. Srikanth)"}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="age" required>
