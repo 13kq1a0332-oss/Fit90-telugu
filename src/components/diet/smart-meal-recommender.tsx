@@ -59,12 +59,15 @@ export function SmartMealRecommender({ onFoodLogged, refreshTrigger }: SmartMeal
   const [targetProteinG, setTargetProteinG] = useState<number>(95);
   const [consumedCalories, setConsumedCalories] = useState<number>(0);
   const [consumedProteinG, setConsumedProteinG] = useState<number>(0);
-  const [selectedSlot, setSelectedSlot] = useState<MealType>("lunch");
+  const [autoDetectedSlot, setAutoDetectedSlot] = useState<MealType>("breakfast");
+  const [userChosenSlot, setUserChosenSlot] = useState<MealType | null>(null);
   const [loggedSlots, setLoggedSlots] = useState<Set<MealType>>(new Set());
   const [comboIndex, setComboIndex] = useState<number>(0);
   const [recommendation, setRecommendation] = useState<RecommendedCombo | null>(null);
   const [isLoggingCombo, setIsLoggingCombo] = useState(false);
   const [comboLoggedSuccess, setComboLoggedSuccess] = useState(false);
+
+  const activeSlot: MealType = userChosenSlot || autoDetectedSlot;
 
   // Helper to load all pre-defined curated South Indian combos per meal slot
   const getSlotCombos = useCallback((slot: MealType): RecommendedCombo[] => {
@@ -401,7 +404,7 @@ export function SmartMealRecommender({ onFoodLogged, refreshTrigger }: SmartMeal
   }, []);
 
   // Compute daily intake and determine meal slot dynamically based on actual logged history
-  const loadMetricsAndRecommend = useCallback(async () => {
+  const loadMetrics = useCallback(async () => {
     try {
       const { goal } = await getUserProfileAndGoal();
       const avgTarget = Math.round((goal.calorieTargetMin + goal.calorieTargetMax) / 2) || 1900;
@@ -434,31 +437,35 @@ export function SmartMealRecommender({ onFoodLogged, refreshTrigger }: SmartMeal
         nextSlot = "dinner";
       }
 
-      setSelectedSlot(nextSlot);
+      setAutoDetectedSlot(nextSlot);
 
-      // Select active combo
-      const combos = getSlotCombos(nextSlot);
-      setRecommendation(combos[comboIndex % combos.length] || combos[0]);
+      // Update recommendation using either user's manual choice or the smart auto slot
+      setUserChosenSlot((prevChosen) => {
+        const slotToUse = prevChosen || nextSlot;
+        const combos = getSlotCombos(slotToUse);
+        setRecommendation(combos[0]);
+        return prevChosen;
+      });
     } catch (err) {
       console.warn("Could not load metrics for meal recommender:", err);
     }
-  }, [comboIndex, getSlotCombos]);
+  }, [getSlotCombos]);
 
   useEffect(() => {
-    loadMetricsAndRecommend();
-  }, [loadMetricsAndRecommend, refreshTrigger]);
+    loadMetrics();
+  }, [loadMetrics, refreshTrigger]);
 
   // Handle slot dropdown change
   const handleSlotChange = (slot: MealType) => {
-    setSelectedSlot(slot);
+    setUserChosenSlot(slot);
     setComboIndex(0);
     const combos = getSlotCombos(slot);
     setRecommendation(combos[0]);
   };
 
-  // Cycle to next authentic recommendation
+  // Cycle to next authentic recommendation for the current active slot
   const handleNextCombo = () => {
-    const combos = getSlotCombos(selectedSlot);
+    const combos = getSlotCombos(activeSlot);
     const nextIdx = (comboIndex + 1) % combos.length;
     setComboIndex(nextIdx);
     setRecommendation(combos[nextIdx]);
@@ -473,7 +480,7 @@ export function SmartMealRecommender({ onFoodLogged, refreshTrigger }: SmartMeal
           foodItemId: item.food.id,
           foodNameEn: item.food.nameEn,
           foodNameTe: item.food.nameTe,
-          mealType: selectedSlot,
+          mealType: activeSlot,
           portionG: item.food.standardServingG * item.servings,
           portionUnitLabel: locale === "te" ? item.labelTe : item.labelEn,
           calories: Math.round((item.food.per100g.calories * (item.food.standardServingG * item.servings)) / 100),
@@ -488,8 +495,11 @@ export function SmartMealRecommender({ onFoodLogged, refreshTrigger }: SmartMeal
       }
 
       setComboLoggedSuccess(true);
+      // Reset user chosen slot so recommender automatically advances to the next unlogged meal slot!
+      setUserChosenSlot(null);
+      setComboIndex(0);
       if (onFoodLogged) onFoodLogged();
-      await loadMetricsAndRecommend();
+      await loadMetrics();
       setTimeout(() => setComboLoggedSuccess(false), 4000);
     } catch (e) {
       console.warn("Failed to log recommended combo", e);
@@ -543,7 +553,7 @@ export function SmartMealRecommender({ onFoodLogged, refreshTrigger }: SmartMeal
             {locale === "te" ? "భోజన సమయం:" : "For:"}
           </span>
           <select
-            value={selectedSlot}
+            value={activeSlot}
             onChange={(e) => handleSlotChange(e.target.value as MealType)}
             className="text-xs font-black rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-slate-800 dark:text-slate-100 shadow-xs focus:ring-2 focus:ring-emerald-500"
           >
@@ -650,8 +660,8 @@ export function SmartMealRecommender({ onFoodLogged, refreshTrigger }: SmartMeal
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-emerald-500/15">
             <span className="text-xs text-slate-500 dark:text-slate-400 italic">
               {locale === "te"
-                ? `💡 ఈ భోజనం నేటి మిగిలిన బడ్జెట్‌కు సరిగ్గా సరిపోతుంది. ${loggedSlots.has(selectedSlot) ? "ఈ సమయానికి ఇప్పటికే ఆహారం నమోదై ఉంది." : "ఇంకా లాగ్ చేయలేదు."}`
-                : `💡 Aligned with your metabolic goals. ${loggedSlots.has(selectedSlot) ? "You have already logged meals for this slot." : "Not logged yet today."}`}
+                ? `💡 ఈ భోజనం నేటి మిగిలిన బడ్జెట్‌కు సరిగ్గా సరిపోతుంది. ${loggedSlots.has(activeSlot) ? "ఈ సమయానికి ఇప్పటికే ఆహారం నమోదై ఉంది." : "ఇంకా లాగ్ చేయలేదు."}`
+                : `💡 Aligned with your metabolic goals. ${loggedSlots.has(activeSlot) ? "You have already logged meals for this slot." : "Not logged yet today."}`}
             </span>
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
