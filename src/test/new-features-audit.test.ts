@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
 
+import { analyzeUploadedLabReport } from "@/lib/ai/lab-report-analyzer";
+import { generateCoachResponse, CoachContext } from "@/lib/ai/lifestyle-coach";
+
 describe("Fit90 New Features & Enhancements QA Audit Suite", () => {
   describe("Feature 1: 1-Click WhatsApp Transformation Share Logic", () => {
     it("generates correct bilingual WhatsApp share text with metrics", () => {
@@ -121,4 +124,67 @@ describe("Fit90 New Features & Enhancements QA Audit Suite", () => {
       expect(current).toBe(0);
     });
   });
+
+  describe("Feature 5: Automated AI Lab Report Analyzer & Personalized Clinical Advice", () => {
+    it("extracts HbA1c biomarkers and generates bilingual diet/workout guidance for uploaded report", () => {
+      const result = analyzeUploadedLabReport("report_1794203153150.pdf");
+      expect(result.numericValue).toBe(6.8);
+      expect(result.unit).toBe("%");
+      expect(result.riskLevel).toBe("elevated");
+      expect(result.clinicalSummaryTe).toContain("HbA1c 6.8%");
+      expect(result.dietaryRecommendationsTe.length).toBeGreaterThanOrEqual(3);
+      expect(result.workoutRecommendationsTe.some((w) => w.includes("నడక"))).toBe(true);
+      expect(result.workoutRecommendationsEn.some((w) => w.includes("GLUT4"))).toBe(true);
+    });
+
+    it("extracts Lipid Profile markers when lipid report is uploaded", () => {
+      const result = analyzeUploadedLabReport("lipid_profile_blood_test.pdf");
+      expect(result.numericValue).toBe(215);
+      expect(result.unit).toBe("mg/dL");
+      expect(result.testName).toContain("Lipid");
+      expect(result.dietaryRecommendationsTe.some((d) => d.includes("నూనెలు"))).toBe(true);
+    });
+  });
+
+  describe("Feature 6: Context-Aware Dynamic AI Lifestyle Coach", () => {
+    it("addresses the user dynamically by name and provides customized greeting with telemetry", () => {
+      const ctx: CoachContext = {
+        userName: "Srikanth",
+        dayNumber: 5,
+        currentWeightKg: 85,
+        targetWeightKg: 80,
+        todayCalories: 1450,
+        todayProteinG: 65,
+        targetProteinMinG: 90,
+      };
+
+      const greeting = generateCoachResponse("Hi", undefined, ctx);
+      expect(greeting.textEn).toContain("Srikanth");
+      expect(greeting.textEn).toContain("Day 5");
+      expect(greeting.textTe).toContain("Srikanth");
+      expect(greeting.textTe).toContain("డే 5");
+    });
+
+    it("calculates exact protein gap and provides specific Telugu food additions", () => {
+      const ctx: CoachContext = {
+        userName: "Srikanth",
+        dayNumber: 5,
+        todayProteinG: 60,
+        targetProteinMinG: 90,
+      };
+
+      const proteinResponse = generateCoachResponse("How is my protein?", undefined, ctx);
+      expect(proteinResponse.textEn).toContain("30g"); // 90 - 60 = 30g
+      expect(proteinResponse.textTe).toContain("గుడ్లు");
+      expect(proteinResponse.textTe).toContain("పప్పు");
+    });
+
+    it("provides knee-safe workout guidance when asked about workouts or knee pain", () => {
+      const workoutResponse = generateCoachResponse("Suggest knee friendly workout");
+      expect(workoutResponse.textEn).toContain("Chair Squats");
+      expect(workoutResponse.textEn).toContain("Glute Bridges");
+      expect(workoutResponse.textTe).toContain("కుర్చీ");
+    });
+  });
 });
+

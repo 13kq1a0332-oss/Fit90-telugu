@@ -360,7 +360,9 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
     };
   }, [speechLanguage, locale]);
 
-  const toggleListening = () => {
+  const [showMicPermissionGuide, setShowMicPermissionGuide] = useState(false);
+
+  const toggleListening = async () => {
     setMicErrorMessage(null);
     setFeedbackSuccess(null);
 
@@ -380,23 +382,45 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
 
     if (isListening) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch {}
       }
       setIsListening(false);
-    } else {
-      setTranscript("");
-      setDetectedMatch(null);
-      setMultiplier(1);
-      try {
-        if (recognitionRef.current) {
-          recognitionRef.current.lang = speechLanguage;
-          recognitionRef.current.start();
-        }
-      } catch (e) {
-        console.warn("Speech start error:", e);
-        // Sometimes recognition needs re-instantiating
-        setIsListening(false);
+      return;
+    }
+
+    // Explicitly prompt the browser for microphone permission via getUserMedia first.
+    // This triggers Chrome's native modal prompt: "fit90-telugu.vercel.app wants to use your microphone [Allow] [Block]"
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Immediately release mic stream so SpeechRecognition can take over cleanly
+        stream.getTracks().forEach((track) => track.stop());
+        setShowMicPermissionGuide(false);
       }
+    } catch (err: any) {
+      console.warn("Microphone permission denied or dismissed:", err);
+      setShowMicPermissionGuide(true);
+      setMicErrorMessage(
+        locale === "te"
+          ? "మైక్రోఫోన్ అనుమతి నిలిపివేయబడింది: బ్రౌజర్ అడ్రస్ బార్‌లో లాక్/ట్యూన్ ఐకాన్ నొక్కి 'Microphone' ని 'Allow' చేయండి."
+          : "Microphone blocked: Please click the lock/settings icon in your address bar and set Microphone to 'Allow'."
+      );
+      return;
+    }
+
+    setTranscript("");
+    setDetectedMatch(null);
+    setMultiplier(1);
+    try {
+      if (recognitionRef.current) {
+        recognitionRef.current.lang = speechLanguage;
+        recognitionRef.current.start();
+      }
+    } catch (e: any) {
+      console.warn("Speech start error:", e);
+      setIsListening(false);
     }
   };
 
@@ -618,9 +642,61 @@ export function TeluguVoiceLogger({ onEntryAdded }: TeluguVoiceLoggerProps) {
           </p>
 
           {micErrorMessage && (
-            <div className="max-w-md mx-auto p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
-              <span>{micErrorMessage}</span>
+            <div className="max-w-md mx-auto p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-100 text-xs shadow-md text-left space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-bold text-amber-900 dark:text-amber-200">
+                    {locale === "te" ? "మైక్రోఫోన్ అనుమతి గైడ్:" : "Microphone Access Required:"}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">{micErrorMessage}</p>
+                </div>
+              </div>
+
+              {/* Step by step unlock instructions for Chrome/Edge */}
+              <div className="bg-white/80 dark:bg-slate-900/80 rounded-xl p-2.5 text-[11px] space-y-1 border border-amber-200/60 dark:border-amber-900/40">
+                <p className="font-semibold text-slate-800 dark:text-slate-200">
+                  {locale === "te" ? "గూగుల్ క్రోమ్‌లో మైక్ ఆన్ చేసే విధానం:" : "To unlock in Google Chrome / Browser:"}
+                </p>
+                <ol className="list-decimal pl-4 space-y-0.5 text-slate-600 dark:text-slate-300">
+                  <li>
+                    {locale === "te"
+                      ? "అడ్రస్ బార్‌లో fit90 ఎడమవైపు ఉన్న 🔒 లాక్ / ⚙️ సెట్టింగ్స్ గుర్తు నొక్కండి."
+                      : "Click the 🔒 lock or ⚙️ site settings icon on the left of your URL address bar."}
+                  </li>
+                  <li>
+                    {locale === "te"
+                      ? "'Microphone' ని 'Allow' చేయండి."
+                      : "Toggle 'Microphone' from Blocked to 'Allow'."}
+                  </li>
+                  <li>
+                    {locale === "te"
+                      ? "కింద ఉన్న బటన్ క్లిక్ చేసి వెంటనే ప్రయత్నించండి."
+                      : "Click the retry button below to start speaking."}
+                  </li>
+                </ol>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={toggleListening}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-8 px-3 shadow-xs"
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                  {locale === "te" ? "మైక్ తిరిగి ప్రయత్నించండి" : "Allow & Retry Microphone"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMicErrorMessage(null)}
+                  className="text-slate-500 hover:text-slate-700 text-xs h-8"
+                >
+                  {locale === "te" ? "మూసివేయి" : "Dismiss"}
+                </Button>
+              </div>
             </div>
           )}
 

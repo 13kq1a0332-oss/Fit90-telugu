@@ -4,11 +4,14 @@ import React, { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import {
   CoachMessage,
+  CoachContext,
   hasUserConsentedToAi,
   setUserAiConsent,
   generateCoachResponse,
 } from "@/lib/ai/lifestyle-coach";
 import { WeeklyDigest, computeWeeklyDigest } from "@/lib/insights-store";
+import { getUserProfileAndGoal } from "@/lib/profile-store";
+import { getFoodLogsForDate, getTodayDateString } from "@/lib/diet-store";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,21 +35,74 @@ export function AiCoachCard() {
   const [inputQuery, setInputQuery] = useState("");
   const [isThinking, setIsThinking] = useState(false);
 
+  const [coachContext, setCoachContext] = useState<CoachContext>({});
+
   useEffect(() => {
     setHasConsented(hasUserConsentedToAi());
     async function load() {
       const d = await computeWeeklyDigest();
       setDigest(d);
-      // Initialize greeting
+
+      let name = "Member";
+      let day = 1;
+      let curWeight = 85;
+      let tarWeight = 80;
+      let calMin = 1800;
+      let calMax = 2000;
+      let protMin = 90;
+      let protMax = 110;
+
+      try {
+        const { profile, goal } = await getUserProfileAndGoal();
+        if (profile?.fullName) name = profile.fullName;
+        if (profile?.currentWeightKg) curWeight = profile.currentWeightKg;
+        if (goal?.targetWeightKg) tarWeight = goal.targetWeightKg;
+        if (goal?.calorieTargetMin) calMin = goal.calorieTargetMin;
+        if (goal?.calorieTargetMax) calMax = goal.calorieTargetMax;
+        if (goal?.proteinTargetMinG) protMin = goal.proteinTargetMinG;
+        if (goal?.proteinTargetMaxG) protMax = goal.proteinTargetMaxG;
+        if (goal?.startDate) {
+          const start = new Date(goal.startDate).getTime();
+          const now = Date.now();
+          const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+          day = Math.min(Math.max(diffDays, 1), 90);
+        }
+      } catch (e) {
+        console.warn("Could not load profile for AI coach:", e);
+      }
+
+      let todayCals = 0;
+      let todayProt = 0;
+      try {
+        const todayEntries = await getFoodLogsForDate(getTodayDateString());
+        todayCals = todayEntries.reduce((sum, item) => sum + (item.calories || 0), 0);
+        todayProt = todayEntries.reduce((sum, item) => sum + (item.proteinG || 0), 0);
+      } catch (e) {
+        console.warn("Could not load today's logs for AI coach:", e);
+      }
+
+      const ctx: CoachContext = {
+        userName: name,
+        dayNumber: day,
+        currentWeightKg: curWeight,
+        targetWeightKg: tarWeight,
+        todayCalories: todayCals,
+        targetCaloriesMin: calMin,
+        targetCaloriesMax: calMax,
+        todayProteinG: Math.round(todayProt),
+        targetProteinMinG: protMin,
+        targetProteinMaxG: protMax,
+      };
+      setCoachContext(ctx);
+
+      // Initialize personalized greeting
       setMessages([
         {
           id: "welcome-1",
           sender: "coach",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          textEn:
-            "Hello! I am your Fit90 Lifestyle Coach. How can I support your weekly habits, South Indian meal choices, or walking progression today?",
-          textTe:
-            "నమస్కారం! నేను మీ ఫిట్90 లైఫ్‌స్టైల్ కోచ్‌ని. మీ వారం అలవాట్లు, తెలుగు భోజన ప్రత్యామ్నాయాలు లేదా నడక పురోగతి గురించి మీరు ఏదైనా అడగవచ్చు.",
+          textEn: `Hello ${name}! 👋 I am your Fit90 Lifestyle Coach. How can I support your weekly habits, South Indian meal choices, or walking progression today?`,
+          textTe: `నమస్కారం ${name} గారు! 👋 నేను మీ ఫిట్90 లైఫ్‌స్టైల్ కోచ్‌ని. మీ వారం అలవాట్లు, తెలుగు భోజన ప్రత్యామ్నాయాలు లేదా నడక పురోగతి గురించి మీరు ఏదైనా అడగవచ్చు.`,
         },
       ]);
     }
@@ -64,7 +120,7 @@ export function AiCoachCard() {
   };
 
   const handleSendMessage = (queryText: string) => {
-    if (!queryText.trim() || !digest) return;
+    if (!queryText.trim()) return;
 
     const userMsg: CoachMessage = {
       id: `user_${Date.now()}`,
@@ -79,7 +135,7 @@ export function AiCoachCard() {
     setIsThinking(true);
 
     setTimeout(() => {
-      const response = generateCoachResponse(queryText, digest);
+      const response = generateCoachResponse(queryText, digest || undefined, coachContext);
       setMessages((prev) => [...prev, response]);
       setIsThinking(false);
     }, 400);

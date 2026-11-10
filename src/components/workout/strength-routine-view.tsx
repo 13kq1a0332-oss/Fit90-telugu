@@ -8,6 +8,7 @@ import {
   ExerciseItem,
   getExerciseById,
 } from "@/lib/data/workout-catalog";
+import { PersonalizedWorkoutEngine } from "./personalized-workout-engine";
 import { RestTimerModal } from "./rest-timer-modal";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,15 @@ export function StrengthRoutineView({ onCompleteRoutine }: StrengthRoutineViewPr
 
   return (
     <div className="space-y-4">
+      {/* Dynamic Health Profile & History Personalized Engine */}
+      <PersonalizedWorkoutEngine
+        onSelectRoutine={(ids) => {
+          setActiveExerciseIds(ids);
+          setCompletedSets({});
+        }}
+        activeExerciseIds={activeExerciseIds}
+      />
+
       {/* Routine Header Card */}
       <Card className="border-emerald-200 dark:border-emerald-900 bg-gradient-to-r from-emerald-500/10 via-white to-slate-50 dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900">
         <CardHeader className="pb-3">
