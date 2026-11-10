@@ -145,8 +145,19 @@ export function PersonalizedWorkoutEngine({
 
   const activeRoutine = routines.find((r) => r.id === activePresetId) || routines[0];
 
+  // Automatically apply the tailored routine to today's workout on initial mount
+  const [hasAutoApplied, setHasAutoApplied] = useState(false);
+  useEffect(() => {
+    if (!hasAutoApplied && profile && onSelectRoutine) {
+      setHasAutoApplied(true);
+      onSelectRoutine(routines[0].exerciseIds);
+    }
+  }, [profile, hasAutoApplied, onSelectRoutine, routines]);
+
   return (
-    <Card className="glass-card rounded-3xl border border-indigo-200/80 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50/50 via-white to-teal-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/30 shadow-md overflow-hidden animate-in fade-in duration-300">
+    <Card className="glass-card-3d rounded-3xl border border-indigo-200/80 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50/50 via-white to-teal-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/30 shadow-xl overflow-hidden animate-in fade-in duration-300 relative">
+      {/* 3D specular light reflection */}
+      <div className="absolute -top-16 -right-16 w-44 h-44 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <CardHeader className="pb-3 border-b border-indigo-100 dark:border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -264,7 +275,7 @@ export function PersonalizedWorkoutEngine({
           <Button
             size="sm"
             onClick={() => handleApplyRoutine(activeRoutine)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs gap-1.5 h-8 px-3 ml-auto"
+            className="btn-3d-emerald text-white font-black text-xs rounded-xl shadow-md gap-1.5 h-9 px-4 ml-auto"
           >
             <Dumbbell className="h-3.5 w-3.5" />
             <span>{locale === "te" ? "ఈ ప్రణాళికను వర్తింపజేయండి" : "Apply This Workout Routine"}</span>

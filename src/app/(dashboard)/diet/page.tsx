@@ -128,7 +128,10 @@ export default function DietPage() {
       <div className="transition-all duration-300">
         {activeTab === "log" && (
           <div className="space-y-6">
-            <SmartMealRecommender onFoodLogged={handleDataChanged} />
+            <SmartMealRecommender
+              onFoodLogged={handleDataChanged}
+              refreshTrigger={refreshTrigger}
+            />
             <DailyFoodLog
               refreshTrigger={refreshTrigger}
               onOpenCatalogForMeal={handleOpenCatalogForMeal}
