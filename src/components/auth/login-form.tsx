@@ -120,7 +120,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md glass-card rounded-3xl p-2 sm:p-3 shadow-2xl border border-slate-200/80 dark:border-slate-800/90 relative overflow-hidden">
+    <Card className="w-full max-w-md glass-card-3d rounded-3xl p-2 sm:p-3 shadow-2xl border border-slate-200/80 dark:border-slate-800/90 relative overflow-hidden">
       {/* Ambient background decoration inside card */}
       <div className="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -223,7 +223,7 @@ export function LoginForm() {
 
           <Button
             type="submit"
-            className="w-full text-base font-semibold mt-2"
+            className="w-full min-h-[48px] rounded-2xl btn-3d-emerald text-sm font-black tracking-wide mt-2"
             isLoading={isLoading}
           >
             {t.auth.loginButton}
@@ -237,7 +237,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => handleOAuthSignIn("google")}
-            className="w-full min-h-[46px] rounded-2xl border border-slate-300/80 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xs hover:border-slate-400"
+            className="w-full min-h-[46px] rounded-2xl btn-3d-slate font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xs"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -263,7 +263,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => handleOAuthSignIn("azure")}
-            className="w-full min-h-[46px] rounded-2xl border border-slate-300/80 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xs hover:border-slate-400"
+            className="w-full min-h-[46px] rounded-2xl btn-3d-slate font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-xs"
           >
             <svg className="h-4 w-4" viewBox="0 0 23 23">
               <path fill="#f25022" d="M1 1h10v10H1z" />

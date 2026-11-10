@@ -11,6 +11,11 @@ import {
   DEFAULT_NEW_USER_PROFILE,
   DEFAULT_GOAL_DATA,
 } from "@/lib/profile-store";
+import { getFoodLogsForDate, getTodayDateString } from "@/lib/diet-store";
+import { getWaterTotalForDate, addWaterLog } from "@/lib/health-store";
+import { getWorkoutSessions } from "@/lib/workout-store";
+import { KineticCounter } from "@/components/ui/kinetic-counter";
+import { ThreeWireframeSphere } from "@/components/ui/three-wireframe-sphere";
 import {
   calculateBMI,
   checkHealthRiskMarkers,
@@ -48,15 +53,45 @@ export default function DashboardPage() {
   // Quick log modal state
   const [quickLogType, setQuickLogType] = useState<"weight" | "waist" | null>(null);
 
-  // Water quick-logged in session
-  const [loggedWaterMl, setLoggedWaterMl] = useState<number>(0);
+  // Real-time telemetry states for Today's Overview
+  const [todayCalories, setTodayCalories] = useState<number>(0);
+  const [todayProtein, setTodayProtein] = useState<number>(0);
+  const [todayWaterMl, setTodayWaterMl] = useState<number>(0);
+  const [todaySteps, setTodaySteps] = useState<number>(0);
 
   useEffect(() => {
     async function loadData() {
-      const data = await getUserProfileAndGoal();
-      setProfile(data.profile);
-      setGoal(data.goal);
-      setIsLoading(false);
+      try {
+        const data = await getUserProfileAndGoal();
+        setProfile(data.profile);
+        setGoal(data.goal);
+
+        const today = getTodayDateString();
+
+        // 1. Live food logs (calories & protein)
+        const foodLogs = await getFoodLogsForDate(today);
+        const cals = foodLogs.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
+        const protein =
+          Math.round(
+            foodLogs.reduce((acc, item) => acc + (Number(item.proteinG) || 0), 0) * 10
+          ) / 10;
+        setTodayCalories(cals);
+        setTodayProtein(protein);
+
+        // 2. Live water hydration
+        const water = await getWaterTotalForDate(today);
+        setTodayWaterMl(water);
+
+        // 3. Live steps from workout sessions
+        const sessions = await getWorkoutSessions();
+        const todaySessions = sessions.filter((s) => s.date === today);
+        const steps = todaySessions.reduce((acc, s) => acc + (Number(s.walkingSteps) || 0), 0);
+        setTodaySteps(steps);
+      } catch (err) {
+        console.warn("Failed to load dashboard telemetry:", err);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -96,8 +131,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleAddWater = () => {
-    setLoggedWaterMl((prev) => prev + 250);
+  const handleAddWater = async () => {
+    const today = getTodayDateString();
+    await addWaterLog(250, today);
+    setTodayWaterMl((prev) => prev + 250);
   };
 
   if (isLoading) {
@@ -191,46 +228,55 @@ export default function DashboardPage() {
         <div className="absolute left-1/3 -top-12 w-48 h-48 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* 90-Day Weight Goal Progress Card */}
-      <div className="glass-card card-spotlight rounded-3xl p-6 sm:p-7 border-slate-200/80 dark:border-slate-800 shadow-md space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {t.dashboard.progressTitle}
-            </span>
-            <div className="flex items-baseline gap-3 mt-1.5">
-              <span className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-                {profile.currentWeightKg} <span className="text-base font-semibold text-slate-400">kg</span>
-              </span>
-              <span className="text-slate-400 font-black text-xl">→</span>
-              <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                {goal.targetWeightKg} <span className="text-base font-semibold text-slate-400">kg</span>
-              </span>
+      {/* 90-Day Weight Goal Progress Card with ThreeUI 3D Sphere */}
+      <div className="glass-card-3d card-spotlight rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-slate-800 shadow-xl space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex-1 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  {t.dashboard.progressTitle}
+                </span>
+                <div className="flex items-baseline gap-3 mt-1.5">
+                  <span className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {profile.currentWeightKg} <span className="text-base font-semibold text-slate-400">kg</span>
+                  </span>
+                  <span className="text-slate-400 font-black text-xl">→</span>
+                  <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                    {goal.targetWeightKg} <span className="text-base font-semibold text-slate-400">kg</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-left sm:text-right">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-black border border-emerald-500/30 shadow-xs">
+                  <TrendingDown className="h-4 w-4 text-emerald-600 animate-bounce" />
+                  <span>
+                    {weightDeltaToLose > 0
+                      ? t.dashboard.toLose.replace("{amount}", String(weightDeltaToLose))
+                      : t.dashboard.goalAchieved}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {/* Progress Bar with Shimmer */}
+            <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden dark:bg-slate-800 relative">
+              <div
+                className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-3.5 rounded-full transition-all duration-700 shadow-xs relative shimmer-active"
+                style={{ width: `${Math.min((dayNumber / 90) * 100, 100)}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 font-bold">
+              <span>Day {dayNumber} of 90</span>
+              <span>Target Date: {goal.targetDate}</span>
             </div>
           </div>
 
-          <div className="text-left sm:text-right">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-extrabold border border-emerald-500/25 shadow-xs">
-              <TrendingDown className="h-4 w-4 text-emerald-600 animate-bounce" />
-              <span>
-                {weightDeltaToLose > 0
-                  ? t.dashboard.toLose.replace("{amount}", String(weightDeltaToLose))
-                  : t.dashboard.goalAchieved}
-              </span>
-            </span>
+          {/* ThreeUI 3D Wireframe Geodesic Sphere */}
+          <div className="hidden md:flex flex-col items-center justify-center pl-4 border-l border-slate-200/60 dark:border-slate-800/60">
+            <ThreeWireframeSphere size={140} score={88} />
           </div>
-        </div>
-
-        {/* Progress Bar with Shimmer */}
-        <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden dark:bg-slate-800 relative">
-          <div
-            className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-3.5 rounded-full transition-all duration-700 shadow-xs relative shimmer-active"
-            style={{ width: `${Math.min((dayNumber / 90) * 100, 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 font-bold">
-          <span>Day {dayNumber} of 90</span>
-          <span>Target Date: {goal.targetDate}</span>
         </div>
       </div>
 
@@ -241,60 +287,64 @@ export default function DashboardPage() {
           <span>{t.dashboard.overviewTitle}</span>
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="glass-card card-spotlight rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-orange-500/10 to-transparent border-slate-200/80 dark:border-slate-800">
+          <div className="glass-card-3d card-spotlight rounded-3xl p-4 sm:p-5 bg-gradient-to-b from-orange-500/10 via-transparent to-transparent border border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{t.dashboard.calories}</span>
-              <div className="h-8 w-8 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-xs">
+              <div className="h-9 w-9 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-xs">
                 <Flame className="h-4 w-4" />
               </div>
             </div>
-            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-              0 <span className="text-xs font-semibold text-slate-400">kcal</span>
+            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-baseline gap-1">
+              <KineticCounter value={todayCalories} />
+              <span className="text-xs font-semibold text-slate-400">kcal</span>
             </div>
             <p className="text-[11px] text-orange-700 dark:text-orange-400 font-bold mt-1.5">
               Target: {goal.calorieTargetMin}-{goal.calorieTargetMax}
             </p>
           </div>
 
-          <div className="glass-card card-spotlight rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-emerald-500/10 to-transparent border-slate-200/80 dark:border-slate-800">
+          <div className="glass-card-3d card-spotlight rounded-3xl p-4 sm:p-5 bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent border border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{t.dashboard.protein}</span>
-              <div className="h-8 w-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs">
+              <div className="h-9 w-9 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs">
                 <Dumbbell className="h-4 w-4" />
               </div>
             </div>
-            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-              0 <span className="text-xs font-semibold text-slate-400">g</span>
+            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-baseline gap-1">
+              <KineticCounter value={todayProtein} decimals={1} />
+              <span className="text-xs font-semibold text-slate-400">g</span>
             </div>
             <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold mt-1.5">
               Target: {goal.proteinTargetMinG}-{goal.proteinTargetMaxG}g
             </p>
           </div>
 
-          <div className="glass-card card-spotlight rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-cyan-500/10 to-transparent border-slate-200/80 dark:border-slate-800">
+          <div className="glass-card-3d card-spotlight rounded-3xl p-4 sm:p-5 bg-gradient-to-b from-cyan-500/10 via-transparent to-transparent border border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{t.dashboard.water}</span>
-              <div className="h-8 w-8 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-xs">
+              <div className="h-9 w-9 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-xs">
                 <Droplets className="h-4 w-4" />
               </div>
             </div>
-            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-              {loggedWaterMl} <span className="text-xs font-semibold text-slate-400">ml</span>
+            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-baseline gap-1">
+              <KineticCounter value={todayWaterMl} />
+              <span className="text-xs font-semibold text-slate-400">ml</span>
             </div>
             <p className="text-[11px] text-cyan-700 dark:text-cyan-400 font-bold mt-1.5">
               Target: {goal.dailyWaterTargetMl} ml
             </p>
           </div>
 
-          <div className="glass-card card-spotlight rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-amber-500/10 to-transparent border-slate-200/80 dark:border-slate-800">
+          <div className="glass-card-3d card-spotlight rounded-3xl p-4 sm:p-5 bg-gradient-to-b from-amber-500/10 via-transparent to-transparent border border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-slate-500 mb-2">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{t.dashboard.steps}</span>
-              <div className="h-8 w-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-xs">
+              <div className="h-9 w-9 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-xs">
                 <Footprints className="h-4 w-4" />
               </div>
             </div>
-            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-              0 <span className="text-xs font-semibold text-slate-400">steps</span>
+            <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-baseline gap-1">
+              <KineticCounter value={todaySteps} />
+              <span className="text-xs font-semibold text-slate-400">steps</span>
             </div>
             <p className="text-[11px] text-amber-700 dark:text-amber-400 font-bold mt-1.5">
               Target: {goal.dailyStepTarget}
@@ -387,7 +437,7 @@ export default function DashboardPage() {
       {/* 1-Tap Daily Hydration Quick Tracker */}
       <QuickWaterTracker
         dailyTargetMl={goal.dailyWaterTargetMl || 3000}
-        onWaterUpdated={(total) => setLoggedWaterMl(total)}
+        onWaterUpdated={(total) => setTodayWaterMl(total)}
       />
 
       {/* Quick Action Buttons */}
