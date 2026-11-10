@@ -140,3 +140,4 @@ export function deleteCustomFood(id: string): void {
     console.warn("Failed to delete custom food", e);
   }
 }
+
