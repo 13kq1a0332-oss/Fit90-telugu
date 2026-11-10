@@ -9,6 +9,7 @@ import {
 } from "@/lib/insights-store";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { WhatsAppShareButton } from "@/components/shared/whatsapp-share-button";
 import {
   Trophy,
   Flame,
@@ -87,23 +88,34 @@ export function WeeklySummaryView() {
             </p>
           </div>
 
-          <Button
-            id="shareWeeklyDigestBtn"
-            onClick={handleCopyDigest}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 shadow-sm self-stretch sm:self-auto"
-          >
-            {copiedToast ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-emerald-200" />
-                <span>{locale === "te" ? "కాపీ చేయబడింది!" : "Copied to Clipboard!"}</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="h-4 w-4" />
-                <span>{locale === "te" ? "సారాంశం కాపీ చేయి" : "Share Weekly Digest"}</span>
-              </>
-            )}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 self-stretch sm:self-auto">
+            <WhatsAppShareButton
+              dayNumber={7}
+              weightLossKg={Math.abs(digest.weightDeltaKg)}
+              stepsToday={Math.round(digest.totalSteps / 7)}
+              caloriesToday={digest.avgCalories}
+              proteinGToday={digest.avgProteinG}
+              metabolicScore={88}
+            />
+            <Button
+              id="shareWeeklyDigestBtn"
+              onClick={handleCopyDigest}
+              variant="outline"
+              className="gap-2 shadow-xs"
+            >
+              {copiedToast ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>{locale === "te" ? "కాపీ చేయబడింది!" : "Copied to Clipboard!"}</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-4 w-4" />
+                  <span>{locale === "te" ? "సారాంశం కాపీ చేయి" : "Share Weekly Digest"}</span>
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

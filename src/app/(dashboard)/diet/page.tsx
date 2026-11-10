@@ -7,6 +7,7 @@ import { MealPlanView } from "@/components/diet/meal-plan-view";
 import { FoodSearchCatalog } from "@/components/diet/food-search-catalog";
 import { GroceryListView } from "@/components/diet/grocery-list-view";
 import { TeluguVoiceLogger } from "@/components/diet/telugu-voice-logger";
+import { SmartMealRecommender } from "@/components/diet/smart-meal-recommender";
 import { MealType } from "@/lib/diet-store";
 import {
   CalendarDays,
@@ -126,10 +127,13 @@ export default function DietPage() {
       {/* Tab Panels */}
       <div className="transition-all duration-300">
         {activeTab === "log" && (
-          <DailyFoodLog
-            refreshTrigger={refreshTrigger}
-            onOpenCatalogForMeal={handleOpenCatalogForMeal}
-          />
+          <div className="space-y-6">
+            <SmartMealRecommender onFoodLogged={handleDataChanged} />
+            <DailyFoodLog
+              refreshTrigger={refreshTrigger}
+              onOpenCatalogForMeal={handleOpenCatalogForMeal}
+            />
+          </div>
         )}
 
         {activeTab === "voice" && (

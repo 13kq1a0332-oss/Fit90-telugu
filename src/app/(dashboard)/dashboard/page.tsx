@@ -19,6 +19,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { QuickLogModal } from "@/components/dashboard/quick-log-modal";
+import { WhatsAppShareButton } from "@/components/shared/whatsapp-share-button";
+import { QuickWaterTracker } from "@/components/health/quick-water-tracker";
 import {
   Flame,
   Dumbbell,
@@ -155,6 +157,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 z-10">
+          <WhatsAppShareButton
+            dayNumber={dayNumber}
+            weightLossKg={weightDeltaToLose > 0 ? (profile.currentWeightKg > goal.targetWeightKg ? 2.5 : 0) : 0}
+            stepsToday={6200}
+            caloriesToday={1450}
+            targetCalories={goal.calorieTargetMax || 2000}
+            proteinGToday={78}
+            metabolicScore={88}
+          />
           <Link href="/profile">
             <Button
               variant="secondary"
@@ -372,6 +383,12 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* 1-Tap Daily Hydration Quick Tracker */}
+      <QuickWaterTracker
+        dailyTargetMl={goal.dailyWaterTargetMl || 3000}
+        onWaterUpdated={(total) => setLoggedWaterMl(total)}
+      />
 
       {/* Quick Action Buttons */}
       <div>

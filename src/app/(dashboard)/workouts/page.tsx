@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import { StrengthRoutineView } from "@/components/workout/strength-routine-view";
 import { WalkingProgressionView } from "@/components/workout/walking-progression-view";
+import { WalkingIntervalTimer } from "@/components/workout/walking-interval-timer";
 import { ExerciseLibraryView } from "@/components/workout/exercise-library-view";
 import { WorkoutHistoryView } from "@/components/workout/workout-history-view";
 import { WorkoutSessionLogger } from "@/components/workout/workout-session-logger";
@@ -157,7 +158,10 @@ export default function WorkoutsPage() {
         )}
 
         {activeTab === "walking" && (
-          <WalkingProgressionView onLogWalkClick={handleLogWalkClick} />
+          <div className="space-y-6">
+            <WalkingIntervalTimer onSessionLogged={handleDataChanged} />
+            <WalkingProgressionView onLogWalkClick={handleLogWalkClick} />
+          </div>
         )}
 
         {activeTab === "library" && <ExerciseLibraryView />}
