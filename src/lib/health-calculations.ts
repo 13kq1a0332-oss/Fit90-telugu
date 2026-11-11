@@ -235,3 +235,133 @@ export function checkHealthRiskMarkers(
   };
 }
 
+export interface MetabolicScoreParams {
+  caloriesConsumed: number;
+  calorieTargetMin: number;
+  calorieTargetMax: number;
+  proteinConsumedG: number;
+  proteinTargetMinG: number;
+  stepsToday: number;
+  stepsTarget: number;
+  waterConsumedMl: number;
+  waterTargetMl: number;
+  bmi: number;
+  waistCm: number;
+  gender?: Gender;
+}
+
+export interface MetabolicScoreResult {
+  score: number; // 0 to 100
+  tierEn: "Optimal" | "Good" | "Needs Focus";
+  tierTe: "ఆప్టిమల్" | "మంచిది" | "దృష్టి అవసరం";
+  nutritionPoints: number; // max 25
+  proteinPoints: number; // max 25
+  activityPoints: number; // max 20
+  hydrationPoints: number; // max 15
+  biometricPoints: number; // max 15
+}
+
+/**
+ * Calculates a dynamic, multi-pillar Metabolic Adherence Score (0-100)
+ * Evaluates nutrition energy, protein density, daily steps, hydration, and Asian Indian biometric cutoffs.
+ */
+export function computeMetabolicScore(params: MetabolicScoreParams): MetabolicScoreResult {
+  const {
+    caloriesConsumed,
+    calorieTargetMin,
+    calorieTargetMax,
+    proteinConsumedG,
+    proteinTargetMinG,
+    stepsToday,
+    stepsTarget,
+    waterConsumedMl,
+    waterTargetMl,
+    bmi,
+    waistCm,
+    gender = "male",
+  } = params;
+
+  // 1. Nutrition Calorie Balance (Max 25 pts)
+  let nutritionPoints = 12; // Baseline
+  if (caloriesConsumed > 0 && calorieTargetMax > 0) {
+    if (caloriesConsumed >= calorieTargetMin * 0.75 && caloriesConsumed <= calorieTargetMax * 1.05) {
+      nutritionPoints = 25; // Perfect adherence
+    } else if (caloriesConsumed < calorieTargetMin * 0.75) {
+      nutritionPoints = Math.round(15 + (caloriesConsumed / (calorieTargetMin * 0.75)) * 10);
+    } else {
+      // Over calorie ceiling
+      const overPct = (caloriesConsumed - calorieTargetMax) / calorieTargetMax;
+      nutritionPoints = Math.max(8, Math.round(25 - overPct * 25));
+    }
+  }
+
+  // 2. Protein Density (Max 25 pts)
+  let proteinPoints = 10;
+  if (proteinTargetMinG > 0) {
+    const proteinRatio = proteinConsumedG / proteinTargetMinG;
+    proteinPoints = Math.min(25, Math.round(proteinRatio * 25));
+  }
+
+  // 3. Physical Activity & Daily Steps (Max 20 pts)
+  let activityPoints = 8;
+  const safeStepTarget = stepsTarget > 0 ? stepsTarget : 7000;
+  activityPoints = Math.min(20, Math.round((stepsToday / safeStepTarget) * 20));
+
+  // 4. Hydration & Fluid Balance (Max 15 pts)
+  let hydrationPoints = 5;
+  const safeWaterTarget = waterTargetMl > 0 ? waterTargetMl : 3000;
+  hydrationPoints = Math.min(15, Math.round((waterConsumedMl / safeWaterTarget) * 15));
+
+  // 5. Biometric Baseline (Asian Indian Risk Cutoffs, Max 15 pts)
+  let biometricPoints = 0;
+  // BMI component (8 pts)
+  if (bmi >= 18.5 && bmi <= 22.9) {
+    biometricPoints += 8; // Normal Asian Indian
+  } else if (bmi > 22.9 && bmi <= 24.9) {
+    biometricPoints += 5; // Overweight
+  } else {
+    biometricPoints += 3; // Obese or underweight
+  }
+  // Waist component (7 pts)
+  const waistLimit = gender === "female" ? 80 : 90;
+  if (waistCm > 0) {
+    if (waistCm <= waistLimit) {
+      biometricPoints += 7;
+    } else if (waistCm <= waistLimit + 5) {
+      biometricPoints += 4;
+    } else {
+      biometricPoints += 2;
+    }
+  } else {
+    biometricPoints += 4;
+  }
+
+  const rawScore = nutritionPoints + proteinPoints + activityPoints + hydrationPoints + biometricPoints;
+  const score = Math.min(100, Math.max(10, rawScore));
+
+  let tierEn: "Optimal" | "Good" | "Needs Focus" = "Optimal";
+  let tierTe: "ఆప్టిమల్" | "మంచిది" | "దృష్టి అవసరం" = "ఆప్టిమల్";
+
+  if (score >= 80) {
+    tierEn = "Optimal";
+    tierTe = "ఆప్టిమల్";
+  } else if (score >= 60) {
+    tierEn = "Good";
+    tierTe = "మంచిది";
+  } else {
+    tierEn = "Needs Focus";
+    tierTe = "దృష్టి అవసరం";
+  }
+
+  return {
+    score,
+    tierEn,
+    tierTe,
+    nutritionPoints,
+    proteinPoints,
+    activityPoints,
+    hydrationPoints,
+    biometricPoints,
+  };
+}
+

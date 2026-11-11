@@ -91,11 +91,18 @@ export function WeeklySummaryView() {
           <div className="flex flex-wrap items-center gap-2 self-stretch sm:self-auto">
             <WhatsAppShareButton
               dayNumber={7}
-              weightLossKg={Math.abs(digest.weightDeltaKg)}
+              weightLossKg={Math.max(0, -digest.weightDeltaKg)}
               stepsToday={Math.round(digest.totalSteps / 7)}
               caloriesToday={digest.avgCalories}
               proteinGToday={digest.avgProteinG}
-              metabolicScore={88}
+              targetCalories={digest.targetCaloriesMax || 2000}
+              metabolicScore={Math.min(100, Math.max(30, Math.round(
+                (digest.avgCalories > 0 ? 25 : 10) +
+                Math.min(25, (digest.avgProteinG / (digest.targetProteinMinG || 90)) * 25) +
+                Math.min(20, (digest.totalSteps / (digest.targetWeeklySteps || 49000)) * 20) +
+                Math.min(15, (digest.avgWaterMl / (digest.targetWaterMl || 3000)) * 15) +
+                15
+              )))}
             />
             <Button
               id="shareWeeklyDigestBtn"

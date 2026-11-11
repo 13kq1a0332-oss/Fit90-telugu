@@ -19,6 +19,7 @@ import { ThreeWireframeSphere } from "@/components/ui/three-wireframe-sphere";
 import {
   calculateBMI,
   checkHealthRiskMarkers,
+  computeMetabolicScore,
 } from "@/lib/health-calculations";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,24 @@ export default function DashboardPage() {
     Math.round((profile.currentWeightKg - goal.targetWeightKg) * 10) / 10
   );
 
+  // Dynamic clinical metabolic adherence score based on today's logged data
+  const metabolicResult = computeMetabolicScore({
+    caloriesConsumed: todayCalories,
+    calorieTargetMin: goal.calorieTargetMin || 1800,
+    calorieTargetMax: goal.calorieTargetMax || 2200,
+    proteinConsumedG: todayProtein,
+    proteinTargetMinG: goal.proteinTargetMinG || 90,
+    stepsToday: todaySteps,
+    stepsTarget: goal.dailyStepTarget || 7000,
+    waterConsumedMl: todayWaterMl,
+    waterTargetMl: goal.dailyWaterTargetMl || 3000,
+    bmi: bmi.bmi,
+    waistCm: profile.waistCm || 95,
+    gender: profile.gender,
+  });
+  const liveMetabolicScore = metabolicResult.score;
+  const liveMetabolicTier = locale === "te" ? metabolicResult.tierTe : metabolicResult.tierEn;
+
   const handleSaveBiometric = async (val: number) => {
     if (quickLogType === "weight") {
       const updatedProfile = { ...profile, currentWeightKg: val };
@@ -196,12 +215,12 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-3 z-10">
           <WhatsAppShareButton
             dayNumber={dayNumber}
-            weightLossKg={weightDeltaToLose > 0 ? (profile.currentWeightKg > goal.targetWeightKg ? 2.5 : 0) : 0}
-            stepsToday={6200}
-            caloriesToday={1450}
-            targetCalories={goal.calorieTargetMax || 2000}
-            proteinGToday={78}
-            metabolicScore={88}
+            weightLossKg={0}
+            stepsToday={todaySteps}
+            caloriesToday={todayCalories}
+            targetCalories={goal.calorieTargetMax || 2250}
+            proteinGToday={todayProtein}
+            metabolicScore={liveMetabolicScore}
           />
           <Link href="/profile">
             <Button
@@ -275,7 +294,7 @@ export default function DashboardPage() {
 
           {/* ThreeUI 3D Wireframe Geodesic Sphere */}
           <div className="hidden md:flex flex-col items-center justify-center pl-4 border-l border-slate-200/60 dark:border-slate-800/60">
-            <ThreeWireframeSphere size={140} score={88} />
+            <ThreeWireframeSphere size={140} score={liveMetabolicScore} tier={liveMetabolicTier} />
           </div>
         </div>
       </div>

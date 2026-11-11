@@ -5,6 +5,7 @@ import {
   calculateTDEE,
   calculateCalorieTarget,
   checkHealthRiskMarkers,
+  computeMetabolicScore,
 } from "@/lib/health-calculations";
 import { SAMPLE_TEST_USER_FIXTURE } from "@/lib/test-fixtures/sample-user";
 
@@ -118,6 +119,53 @@ describe("Health Calculations & Calorie Estimation Engine", () => {
       const femaleRisk = checkHealthRiskMarkers("female", 85, false);
       expect(femaleRisk.hasWaistRisk).toBe(true);
       expect(femaleRisk.waistRiskMessageEn).toContain("80 cm");
+    });
+  });
+
+  describe("Dynamic 5-Pillar Metabolic Score Engine", () => {
+    it("should accurately compute a dynamic metabolic score from daily metrics", () => {
+      const res = computeMetabolicScore({
+        caloriesConsumed: 1950,
+        calorieTargetMin: 1800,
+        calorieTargetMax: 2100,
+        proteinConsumedG: 95,
+        proteinTargetMinG: 90,
+        stepsToday: 7500,
+        stepsTarget: 7000,
+        waterConsumedMl: 3200,
+        waterTargetMl: 3000,
+        bmi: 22.4,
+        waistCm: 84,
+        gender: "male",
+      });
+
+      expect(res.score).toBeGreaterThanOrEqual(85);
+      expect(res.tierEn).toBe("Optimal");
+      expect(res.nutritionPoints).toBe(25);
+      expect(res.proteinPoints).toBe(25);
+      expect(res.activityPoints).toBe(20);
+      expect(res.hydrationPoints).toBe(15);
+    });
+
+    it("should handle baseline or early day logs gracefully", () => {
+      const early = computeMetabolicScore({
+        caloriesConsumed: 0,
+        calorieTargetMin: 1800,
+        calorieTargetMax: 2100,
+        proteinConsumedG: 0,
+        proteinTargetMinG: 90,
+        stepsToday: 1200,
+        stepsTarget: 7000,
+        waterConsumedMl: 500,
+        waterTargetMl: 3000,
+        bmi: 38.1,
+        waistCm: 155,
+        gender: "male",
+      });
+
+      expect(early.score).toBeGreaterThan(0);
+      expect(early.score).toBeLessThanOrEqual(100);
+      expect(early.tierEn).toBeDefined();
     });
   });
 });

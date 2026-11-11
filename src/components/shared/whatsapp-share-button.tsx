@@ -30,10 +30,10 @@ export function WhatsAppShareButton({
   const generateMessage = (): string => {
     if (locale === "te") {
       let text = `🔥 *నా Fit90 ప్రయాణం - Day ${dayNumber}/90*\n\n`;
-      text += `నేను ఈరోజు Fit90 తెలుగు యాప్‌తో నా ఆరోగ్య లక్ష్యాలను పూర్తి చేశాను:\n`;
-      if (stepsToday > 0) text += `🚶‍♂️ నేటి నడక: *${stepsToday.toLocaleString()} అడుగులు*\n`;
-      if (caloriesToday > 0) text += `🥗 తీసుకున్న క్యాలరీలు: *${caloriesToday} / ${targetCalories} kcal*\n`;
-      if (proteinGToday > 0) text += `💪 ప్రోటీన్: *${proteinGToday}g*\n`;
+      text += `నేను ఈరోజు Fit90 తెలుగు యాప్‌తో నా ఆరోగ్య లక్ష్యాలను ట్రాక్ చేశాను:\n`;
+      text += `🚶‍♂️ నేటి నడక: *${stepsToday.toLocaleString()} అడుగులు*\n`;
+      text += `🥗 తీసుకున్న క్యాలరీలు: *${caloriesToday} / ${targetCalories} kcal*\n`;
+      text += `💪 ప్రోటీన్: *${proteinGToday}g*\n`;
       if (weightLossKg > 0) text += `📉 తగ్గిన బరువు: *${weightLossKg.toFixed(1)} kg*\n`;
       text += `⚡ మెటబాలిక్ స్కోర్: *${metabolicScore}/100*\n\n`;
       text += `ఆరోగ్యకరమైన దక్షిణ భారతీయ జీవనశైలితో బరువు నియంత్రణ! 🌿\n`;
@@ -42,9 +42,9 @@ export function WhatsAppShareButton({
     } else {
       let text = `🔥 *My Fit90 Journey - Day ${dayNumber}/90*\n\n`;
       text += `Crushed my daily targets on Fit90 Telugu app today:\n`;
-      if (stepsToday > 0) text += `🚶‍♂️ Steps: *${stepsToday.toLocaleString()} steps*\n`;
-      if (caloriesToday > 0) text += `🥗 Nutrition: *${caloriesToday} / ${targetCalories} kcal*\n`;
-      if (proteinGToday > 0) text += `💪 Protein: *${proteinGToday}g*\n`;
+      text += `🚶‍♂️ Steps: *${stepsToday.toLocaleString()} steps*\n`;
+      text += `🥗 Nutrition: *${caloriesToday} / ${targetCalories} kcal*\n`;
+      text += `💪 Protein: *${proteinGToday}g*\n`;
       if (weightLossKg > 0) text += `📉 Weight Progress: *-${weightLossKg.toFixed(1)} kg*\n`;
       text += `⚡ Metabolic Score: *${metabolicScore}/100*\n\n`;
       text += `Healthy South Indian metabolic transformation! 🌿\n`;
@@ -69,7 +69,7 @@ export function WhatsAppShareButton({
     <button
       type="button"
       onClick={handleShare}
-      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/25 active:scale-95 transition-all"
+      className="btn-3d-emerald inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-white font-black text-xs shadow-lg shadow-emerald-600/30 active:scale-95 transition-all min-h-[44px]"
       title="Share your daily progress on WhatsApp"
     >
       {copied ? (

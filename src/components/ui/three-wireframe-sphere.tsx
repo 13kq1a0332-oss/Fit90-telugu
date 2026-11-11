@@ -6,6 +6,7 @@ interface ThreeWireframeSphereProps {
   className?: string;
   size?: number;
   score?: number;
+  tier?: string;
 }
 
 /**
@@ -16,6 +17,7 @@ export function ThreeWireframeSphere({
   className = "",
   size = 220,
   score = 88,
+  tier = "Optimal",
 }: ThreeWireframeSphereProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -151,7 +153,7 @@ export function ThreeWireframeSphere({
           {score}
         </span>
         <span className="text-[10px] font-bold text-slate-400">
-          Optimal / 100
+          {tier} / 100
         </span>
       </div>
     </div>
